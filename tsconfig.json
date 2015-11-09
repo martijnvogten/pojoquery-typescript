@@ -1,0 +1,12 @@
+{
+	"compilerOptions": {
+		"target": "ES5",
+		"module": "commonjs",
+		"sourceMap": true,
+		"outDir": "build",
+		"experimentalDecorators": true
+	},
+	 "exclude": [
+        "node_modules"
+    ]
+}
