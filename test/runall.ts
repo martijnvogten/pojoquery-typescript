@@ -1,8 +1,8 @@
 import "source-map-support/register"
 
-import * as basic from "./basic"
+import * as tosql_basic from "./tosql-basic"
 import * as internals from "./internals"
 import {runTests} from "./test-utils"
 
 runTests(internals);
-runTests(basic);
+runTests(tosql_basic);
