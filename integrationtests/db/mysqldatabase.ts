@@ -12,6 +12,64 @@ export interface ConnectionCallback<T> {
 	(param: mysql.IConnection): T;
 }
 
+export class MySQLConnection {
+	private conn: mysql.IConnection;
+	
+	constructor(conn: mysql.IConnection) {
+		this.conn = conn;
+	}
+	
+	beginTransaction(): Promise<void> {
+		return new Promise<void>((resolve, reject) => {
+			this.conn.beginTransaction(err => {
+				if (err) {
+					reject(err);
+				} else {
+					resolve();
+				}
+			})
+		});
+	}
+	
+	query<T>(sql: string, params?: any[]): Promise<T> {
+		return new Promise<T>((resolve, reject) => {
+			this.conn.query(sql, params, (error, values) => {
+				if (error) {
+					console.error(`ERROR ${error}`);
+					console.error(sql);
+					reject(error);
+					return;
+				}
+				resolve(values);
+			});
+		});
+	}
+	
+	commit(): Promise<void> {
+		return new Promise<void>((resolve, reject) => {
+			this.conn.commit((err) => {
+				if (err) {
+					reject(err);
+				} else {
+					resolve();
+				}
+			})
+		});
+	}
+	
+	rollback(): Promise<void> {
+		return new Promise<void>((resolve, reject) => {
+			this.conn.rollback(() => {
+				resolve();
+			})
+		});
+	}
+	
+	release() {
+		this.conn.release();
+	}
+}
+
 export class MySQLDatabase {
 	
 	private pool: mysql.IPool; 
@@ -20,15 +78,15 @@ export class MySQLDatabase {
 		this.pool = mysql.createPool({host, user, password, database});
 	}
 	
-	public getConnection(): Promise<mysql.IConnection> {
-		return new Promise<mysql.IConnection>((resolve, reject) => {
+	public getConnection(): Promise<MySQLConnection> {
+		return new Promise<MySQLConnection>((resolve, reject) => {
 			this.pool.getConnection((error, conn) => {
 				if (error) {
 					console.log(error);
 					reject(error);
 					return;
 				}
-				resolve(conn);
+				resolve(new MySQLConnection(conn));
 			});
 		});
 	}
