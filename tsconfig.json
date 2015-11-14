@@ -21,7 +21,6 @@
 		"typings/node.d.ts",
 		"typings/assert.d.ts",
 		"typings/diff.d.ts",
-		"typings/colors.d.ts",
-		"typings/nodeunit.d.ts"
+		"typings/colors.d.ts"
 	]
 }
