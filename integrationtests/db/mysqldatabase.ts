@@ -12,7 +12,7 @@ export interface ConnectionCallback<T> {
 	(param: mysql.IConnection): T;
 }
 
-export class MySQLConnection {
+class MySQLConnection {
 	private conn: mysql.IConnection;
 	
 	constructor(conn: mysql.IConnection) {
@@ -78,7 +78,7 @@ export class MySQLDatabase {
 		this.pool = mysql.createPool({host, user, password, database});
 	}
 	
-	public getConnection(): Promise<MySQLConnection> {
+	private getConnection(): Promise<MySQLConnection> {
 		return new Promise<MySQLConnection>((resolve, reject) => {
 			this.pool.getConnection((error, conn) => {
 				if (error) {
@@ -91,49 +91,36 @@ export class MySQLDatabase {
 		});
 	}
 	
-	public withConnection<T>(resolve: ConnectionCallback<T>, reject: (any) => void) {
-		return this.pool.getConnection((error, conn) => {
-			if (error) {
-				console.log(error);
-				reject(error);
-				return;
-			}
-			resolve(conn);
-		});
+	public async runInTransaction<T>(callback: (conn: MySQLConnection) => Promise<T>): Promise<T> {
+		let conn = await this.getConnection();
+		try {
+			await conn.beginTransaction();
+			let result = await callback(conn);
+			await conn.commit();
+			return result;
+		} catch (e) {
+			await conn.rollback();
+			throw e;
+		} finally {
+			conn.release();
+		}
+	}
+
+	public async withConnection<T>(callback: (conn: MySQLConnection) => Promise<T>): Promise<T> {
+		let conn = await this.getConnection();
+		try {
+			return await callback(conn);
+		} finally {
+			conn.release();
+		}
+	}
+
+	public async update(tableName: string, idcondition: Object, values: Object): Promise<void> {
+		return this.withConnection(conn => conn.query<void>('UPDATE `' + tableName + '` SET ? WHERE ?', [values, idcondition]));
 	}
 	
-	update(tableName: string, idcondition: Object, values: Object): Promise<void> {
-		return new Promise<void>((resolve, reject) => {
-			this.withConnection(conn => {
-				conn.query('UPDATE `' + tableName + '` SET ? WHERE ?', [values, idcondition], (error, values) => {
-					conn.release();
-					if (error) {
-						console.error(`ERROR ${error}`);
-						console.error(error);
-						reject(error);
-						return;
-					}
-					resolve();
-				});
-			}, reject);
-		});
-	}
-	
-	query<T>(sql: string, values?: any[]): Promise<T> {
-		return new Promise<T>((resolve, reject) => {
-			this.withConnection(conn => {
-				conn.query(sql, values, (error, values) => {
-					conn.release();
-					if (error) {
-						console.error(`ERROR ${error}`);
-						console.error(sql);
-						reject(error);
-						return;
-					}
-					resolve(values);
-				});
-			}, reject);
-		});
+	public query<T>(sql: string, values?: any[]): Promise<T> {
+		return this.withConnection(conn => conn.query<T>(sql, values));
 	}
 	
 	endPool() {
