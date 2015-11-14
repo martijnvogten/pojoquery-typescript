@@ -1,5 +1,5 @@
 import * as assert from "assert";
-import {AssertionError} from "assert";
+import {internal} from "assert";
 
 import * as diff from "diff";
 import {green, red, bold} from "colors";
@@ -23,8 +23,8 @@ export function runTests(tests: Object) {
 			console.log(testName + ": " + green.bold("OK"));
 		} catch (e) {
 			console.log(testName + ": " + red.bold("FAIL"));
-			if (e instanceof AssertionError) {
-				let ae: AssertionError = e;
+			if (e instanceof internal.AssertionError) {
+				let ae: internal.AssertionError = e;
 				console.log(ae.message);
 				if (typeof ae.expected == 'string') {
 					console.log("expected:", showDiffWithColors(ae.expected, ae.actual));

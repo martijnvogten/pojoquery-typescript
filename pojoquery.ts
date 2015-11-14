@@ -3,11 +3,14 @@ import "reflect-metadata"
 import * as assert from "assert";
 
 import {runTests} from "./test-utils/test-utils"
-import {query, sql} from "./db"
 
 import {SqlQuery,SqlExpression,JoinType} from "./query"
 import * as meta from "./metadata"
 import {table, id, joinMany, joinOne, char, FieldMeta} from "./metadata"
+
+export interface DatabaseConnection {
+	query(sql: string, params: any[]): Promise<Object[]>;
+}
 
 class IdValue {
 	values: any[];
@@ -81,7 +84,6 @@ export class QueryBuilder {
 		if (tableMappings.length == 0) {
 			throw `Missing @table decorator on class ${clz.name} or any of its superclasses`;
 		}
-		
 		let topMapping = tableMappings[tableMappings.length - 1];
 		this.rootAlias = topMapping.tableName;
 		this.resultClass = clz;
@@ -204,14 +206,14 @@ export class QueryBuilder {
 		return this.query.toSql();
 	}
 	
-	execute<R>(conn: mysql.IConnection): Promise<R[]> {
-		return query<any>(this.toSql()).then(rows => {
+	execute<R>(db: DatabaseConnection, params?: any[]): Promise<R[]> {
+		return db.query(this.toSql(), params).then(rows => {
 			return this.processRows(rows) as R[]
 		});
 	}
 	
-	querySingleRow<R>(conn: mysql.IConnection): Promise<R> {
-		return this.execute(conn).then(entities => entities[0] as R);
+	querySingleRow<R>(db: DatabaseConnection): Promise<R> {
+		return this.execute(db).then(entities => entities[0] as R);
 	}
 	
 	determineTableMapping(clz: Function): TableMapping[] {
@@ -364,135 +366,4 @@ export class QueryBuilder {
 	}
 }
 
-
-export function build(clz: any): QueryBuilder {
-	return new QueryBuilder(clz);
-}
-
-function tests() {
-	@table("user")
-	class User {
-		@id
-		id: string;
-		
-		@char()
-		email: string;
-	}
-	
-	@table("article")
-	class Article {
-		@id
-		id: number;
-		
-		@char()
-		title: string;
-	}
-	
-	@table("comment")
-	class Comment {
-		@id
-		id: number;
-		
-		@char()
-		comment: string;
-	}
-	
-	class CommentDetail extends Comment {
-		@joinOne(User)
-		author: User;
-	}
-	
-	class ArticleDetail extends Article {
-		@joinMany(Comment)
-		comments: Comment[];
-	}
-	
-	class ArticleDetailWithCommentAuthors extends Article {
-		@joinMany(CommentDetail)
-		comments: CommentDetail[];
-	}
-	
-	function norm(sql: string) {
-		return sql.trim().replace(/\s+/g, " ").replace(/\"/g, "`");
-	}
-	
-	return {
-		decorators() {
-			let fields = meta.getFields(User);
-			let idField = fields.filter(f => f.fieldName == 'id')[0];
-			let usernameField = fields.filter(f => f.fieldName == 'email')[0];
-			
-			assert.equal(meta.getTable(User), "user", "Table annotation");
-			assert.equal(usernameField.fieldName, "email", "email fieldName");
-			assert.equal(idField.fieldName, "id", "id fieldName");
-			assert.equal(idField.isIdField, true, "id is an idfield");
-		}
-		
-		, getSuperclass() {
-			assert.equal(new QueryBuilder(User).getSuperclass(ArticleDetail), Article, "getSuperclass");
-		}
-		
-		, tableMapping() {
-			let mapping = new QueryBuilder(User).determineTableMapping(ArticleDetail)
-			assert.equal(mapping.length, 1, "One table");
-			assert.equal(mapping[0].fields.length, 3, "Three fields");
-		}
-		
-		, resolveAliases() {
-			assert.equal(QueryBuilder.resolveAliases(new SqlExpression("{this}.name"), "user").sql, "`user`.name", "resolveSimple");			
-		}
-		
-		, simpleQuery() {
-			assert.equal(norm(build(User).toSql()), norm("SELECT `user`.id AS `user.id`, `user`.email AS `user.email` FROM user"), "Basic query");
-		}
-		
-		, where() {
-			let q = build(User).addWhere("id = ?", 1);
-			assert.equal(norm(q.toSql()), norm("SELECT `user`.id AS `user.id`, `user`.email AS `user.email` FROM user WHERE id = ?"), "Where id = ?");
-		}
-		
-		, atricleBasic() {
-			assert.equal(norm(new QueryBuilder(Article).toSql()), norm("SELECT `article`.id AS `article.id`, `article`.title AS `article.title` FROM article"), "Basic query");
-		}
-		
-		, atricleDetail() {
-			assert.equal(
-				norm(new QueryBuilder(ArticleDetail).toSql()), 
-				norm(`
-					SELECT 
-						"article".id AS "article.id", 
-						"article".title AS "article.title",
-						"comments".id AS "comments.id", 
-						"comments".comment AS "comments.comment" 
-					FROM article 
-						LEFT JOIN comment AS "comments" ON "article".id = "comments".article_id
-				`), 
-				"Article detail");
-		}
-		
-		, atricleDetailWithAuthors() {
-			assert.equal(
-				norm(new QueryBuilder(ArticleDetailWithCommentAuthors).toSql()), 
-				norm(`
-					SELECT 
-						"article".id AS "article.id", 
-						"article".title AS "article.title", 
-						"comments".id AS "comments.id", 
-						"comments".comment AS "comments.comment", 
-						"comments.author".id AS "comments.author.id", 
-						"comments.author".email AS "comments.author.email" 
-					FROM article 
-						LEFT JOIN comment AS "comments" ON "article".id = "comments".article_id 
-						LEFT JOIN user AS "comments.author" ON "comments".author_id = "comments.author".id
-				`), 
-				"Article detail with comment authors");
-		}
-		
-	};
-}
-
-
-if (require.main === module) {
-	runTests(tests());
-}
 

@@ -2,10 +2,17 @@
 const METAKEY_TABLE = "pojoquery.table";
 const METAKEY_FIELDS = "pojoquery.fields";
 
+
+declare namespace Reflect {
+	function getOwnMetadata(key: string, target: any): any;
+	function defineMetadata(key: string, value: any, target: any);
+}
+
+
 export const getFields: (target: any) => FieldMeta[] = lazyMetadata.bind(null, METAKEY_FIELDS, () => []);
 export const getTable: (target: any) => string = lazyMetadata.bind(null, METAKEY_TABLE, () => null);
 
-function lazyMetadata<T>(key: string, initialValue: () => T, target: any): T {
+export function lazyMetadata<T>(key: string, initialValue: () => T, target: any): T {
 	let metadata = Reflect.getOwnMetadata(key, target); 
 	if (metadata === undefined) {
 		let val = initialValue();

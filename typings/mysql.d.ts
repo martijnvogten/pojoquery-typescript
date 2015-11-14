@@ -3,7 +3,7 @@
 // Definitions by: William Johnston <https://github.com/wjohnsto>
 // Definitions: https://github.com/borisyankov/DefinitelyTyped
 
-declare namespace mysql {
+declare module mysql {
 	function createConnection(connectionUri: string): IConnection;
 	function createConnection(config: IConnectionConfig): IConnection;
 	function createPool(config: IPoolConfig): IPool;

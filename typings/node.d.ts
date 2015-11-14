@@ -1295,7 +1295,7 @@ declare module "assert" {
         export function ifError(value: any): void;
     }
 
-    export = internal;
+    // export = internal;
 }
 
 declare module "tty" {

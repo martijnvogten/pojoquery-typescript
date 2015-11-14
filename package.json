@@ -3,11 +3,13 @@
     "version": "0.0.1",
     "private": true,
     "dependencies": {
-        "mysql": "2.9.0",
         "es6-promise": "3.0.2",
         "reflect-metadata": "0.1.2",
-        "source-map-support": "0.3.2",
-        "colors": "1.1.2",
-        "diff": "2.2.0"
+        "source-map-support": "0.3.2"
+  },
+  "devDependencies": {
+      "mysql": "2.9.0",
+      "colors": "1.1.2",
+       "diff": "2.2.0"
   }
 }
