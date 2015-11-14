@@ -51,10 +51,10 @@ export function id(target: any, key: string) {
 	fields.push({declaringClass: constructor, fieldName: key, type: id, isIdField: true, props: {}});
 }
 
-export function char(props?: FieldMetaProps) {
+export function text(props?: FieldMetaProps) {
 	return function field(target: any, key: string) {
 		var fields = getFields(target.constructor);
-		fields.push({declaringClass: target.constructor, fieldName: key, type: char, props: props});
+		fields.push({declaringClass: target.constructor, fieldName: key, type: text, props: props});
 	}
 }
 

@@ -115,10 +115,14 @@ export class MySQLDatabase {
 		}
 	}
 
+	/** Auto-commit */
 	public async update(tableName: string, idcondition: Object, values: Object): Promise<void> {
-		return this.withConnection(conn => conn.query<void>('UPDATE `' + tableName + '` SET ? WHERE ?', [values, idcondition]));
+		return this.withConnection(conn => 
+			conn.query<void>('UPDATE `' + tableName + '` SET ? WHERE ?', [values, idcondition])
+		);
 	}
 	
+	/** Auto-commit */
 	public query<T>(sql: string, values?: any[]): Promise<T> {
 		return this.withConnection(conn => conn.query<T>(sql, values));
 	}

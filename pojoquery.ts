@@ -4,7 +4,7 @@ import * as assert from "assert";
 
 import {SqlQuery,SqlExpression,JoinType} from "./query"
 import * as meta from "./metadata"
-import {table, id, joinMany, joinOne, char, FieldMeta} from "./metadata"
+import {table, id, joinMany, joinOne, text, FieldMeta} from "./metadata"
 
 export interface DatabaseConnection {
 	query(sql: string, params: any[]): Promise<Object[]>;

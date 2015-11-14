@@ -7,6 +7,29 @@ export function equal(actual: any, expected: any, description?: string) {
 	}
 }
 
+export function runTests(tests: Object) {
+	Object.keys(tests).forEach(testName => {
+		try {
+			tests[testName]();
+			console.log(testName + ": " + green.bold("OK"));
+		} catch (e) {
+			console.log(testName + ": " + red.bold("FAIL"));
+			if (e instanceof AssertionError) {
+				let ae: AssertionError = e;
+				console.log(ae.message);
+				if (typeof ae.expected == 'string') {
+					console.log("expected:", showDiffWithColors(ae.expected, ae.actual));
+					console.log("actual  :", showDiffWithColors(ae.actual, ae.expected));
+				} else {
+					console.log("expected:", ae.expected);
+					console.log("actual  :", ae.actual);
+				}
+			}
+			throw e;
+		}
+	});
+}
+
 export class AssertionError extends Error {
 	actual: any;
 	expected: string;
@@ -32,25 +55,3 @@ function showDiffWithColors(one: string, other: string): string {
 	}).join('');	
 }
 
-export function runTests(tests: Object) {
-	Object.keys(tests).forEach(testName => {
-		try {
-			tests[testName]();
-			console.log(testName + ": " + green.bold("OK"));
-		} catch (e) {
-			console.log(testName + ": " + red.bold("FAIL"));
-			if (e instanceof AssertionError) {
-				let ae: AssertionError = e;
-				console.log(ae.message);
-				if (typeof ae.expected == 'string') {
-					console.log("expected:", showDiffWithColors(ae.expected, ae.actual));
-					console.log("actual  :", showDiffWithColors(ae.actual, ae.expected));
-				} else {
-					console.log("expected:", ae.expected);
-					console.log("actual  :", ae.actual);
-				}
-			}
-			throw e;
-		}
-	});
-}

@@ -1,8 +1,7 @@
-import "source-map-support/register"
 import "reflect-metadata"
 import * as test from "./test-utils";
 
-import {table, id, char, joinOne, joinMany} from "../metadata"
+import {table, id, text, joinOne, joinMany} from "../metadata"
 import {QueryBuilder} from "../pojoquery"
 import {SqlExpression} from "../query"
 
@@ -11,7 +10,7 @@ class User {
 	@id
 	id: string;
 	
-	@char()
+	@text()
 	email: string;
 }
 
@@ -20,7 +19,7 @@ class Article {
 	@id
 	id: number;
 	
-	@char()
+	@text()
 	title: string;
 }
 
@@ -29,7 +28,7 @@ class Comment {
 	@id
 	id: number;
 	
-	@char()
+	@text()
 	comment: string;
 }
 
@@ -48,52 +47,29 @@ class ArticleDetailWithCommentAuthors extends Article {
 	comments: CommentDetail[];
 }
 
-function norm(sql: string) {
-	return sql.trim().replace(/\s+/g, " ").replace(/\"/g, "`");
-}
-
-function build(clz: Function): QueryBuilder {
-	return new QueryBuilder(clz);
-}
-
-export function getSuperclass() {
-	test.equal(new QueryBuilder(User).getSuperclass(ArticleDetail), Article, "getSuperclass");
-}
-	
-export function tableMapping() {
-	let mapping = new QueryBuilder(User).determineTableMapping(ArticleDetail)
-	test.equal(mapping.length, 1, "One table");
-	test.equal(mapping[0].fields.length, 3, "Three fields");
-}
-	
-export function resolveAliases() {
-	test.equal(QueryBuilder.resolveAliases(new SqlExpression("{this}.name"), "user").sql, "`user`.name", "resolveSimple");			
-	test.equal(QueryBuilder.resolveAliases(new SqlExpression("{author}.name"), "user").sql, "`user.author`.name", "resolveSimple");			
-}
-	
 export function simpleQuery() {
 	testToSql(
 		build(User), 
-		"SELECT `user`.id AS `user.id`, `user`.email AS `user.email` FROM user"
+		`SELECT "user".id AS "user.id", "user".email AS "user.email" FROM user`
 	);
 }
 	
 export function simpleWhereClause() {
 	testToSql(
 		build(User).addWhere("id = ?", 1),
-		"SELECT `user`.id AS `user.id`, `user`.email AS `user.email` FROM user WHERE id = ?"
+		`SELECT "user".id AS "user.id", "user".email AS "user.email" FROM user WHERE id = ?`
 	);
 }
 	
 export function simpleArticleQuery() {
 	testToSql(
-		new QueryBuilder(Article), 
-		"SELECT `article`.id AS `article.id`, `article`.title AS `article.title` FROM article"
+		build(Article), 
+		`SELECT "article".id AS "article.id", "article".title AS "article.title" FROM article`
 	);
 }
 export function atricleDetail() {
 	testToSql(
-		new QueryBuilder(ArticleDetail), `
+		build(ArticleDetail), `
 		SELECT 
 			"article".id AS "article.id", 
 			"article".title AS "article.title",
@@ -106,7 +82,7 @@ export function atricleDetail() {
 	
 export function atricleDetailWithAuthors() {
 	testToSql(
-		new QueryBuilder(ArticleDetailWithCommentAuthors),
+		build(ArticleDetailWithCommentAuthors),
 		`SELECT 
 			"article".id AS "article.id", 
 			"article".title AS "article.title", 
@@ -122,4 +98,12 @@ export function atricleDetailWithAuthors() {
 
 function testToSql(query: QueryBuilder, expectedSql: string) {
 	test.equal(norm(query.toSql()), norm(expectedSql));
+}
+
+function norm(sql: string) {
+	return sql.trim().replace(/\s+/g, " ").replace(/\"/g, "`");
+}
+
+function build(clz: Function): QueryBuilder {
+	return new QueryBuilder(clz);
 }
