@@ -100,9 +100,34 @@ export class QueryBuilder {
 		
 		this.collectFieldsOfClass(clz, superClass).forEach(f => {
 			if (f.type == joinMany) {
-				let componentType = f.props.linkedClass;
-				let linkAlias = this.joinMany(alias, f, componentType);
-				this.addClass(componentType, linkAlias, alias, f);
+				const props = f.props;
+				if (props && props.linkTable) {
+					let linkTable = props.linkTable;
+					let ownMapping = this.determineTableMapping(f.declaringClass);
+					let linkField = this.linkFieldName(ownMapping[0].tableName);
+					let linkTableAlias = alias == this.rootAlias ? linkTable : alias + "." + linkTable;
+					let idField = this.determineIdField(f.declaringClass);
+					
+					let joinCondition  = new SqlExpression("{" + alias + "}." + idField.fieldName + " = {" + linkTableAlias + "}." + linkField)					
+					this.query.addJoin(JoinType.LEFT, linkTable, linkTableAlias, joinCondition)
+					 
+					let componentType = f.props.linkedClass;
+					
+					let foreignMapping = this.determineTableMapping(componentType);
+					let foreignIdField = this.determineIdField(componentType);
+					let foreignTable = foreignMapping[0].tableName;
+					let linkTableField = this.linkFieldName(foreignTable);
+					let linkAlias = alias == this.rootAlias ? f.fieldName : alias + "." + f.fieldName;
+					
+					joinCondition  = new SqlExpression("{" + linkTableAlias + "}." + linkTableField + " = {" + linkAlias + "}." + foreignIdField.fieldName)					
+					this.query.addJoin(JoinType.LEFT, foreignTable, linkAlias, joinCondition)
+					
+					this.addClass(componentType, linkAlias, alias, f);
+				} else {
+					let componentType = f.props.linkedClass;
+					let linkAlias = this.joinMany(alias, f, componentType);
+					this.addClass(componentType, linkAlias, alias, f);
+				}
 			} else if (f.type == joinOne) {
 				let componentType = f.props.linkedClass;
 				let linkAlias = this.joinOne(alias, f, componentType);
@@ -154,7 +179,7 @@ export class QueryBuilder {
 		return this.joinMany2(alias, f.fieldName, tableName, idField, linkField, joinCondition);
 	}
 
-	private joinMany2(alias: string, fieldName: string, tableName: string, idField: string, linkField: string, joinCondition: SqlExpression) {
+	private joinMany2(alias: string, fieldName: string, tableName: string, idField: string, linkField: string, joinCondition?: SqlExpression) {
 		let linkAlias = alias == this.rootAlias ? fieldName : (alias + "." + fieldName);
 		if (joinCondition == null) {
 			joinCondition = new SqlExpression("{" + alias + "}." + idField + " = {" + linkAlias + "}." + linkField);
@@ -174,12 +199,12 @@ export class QueryBuilder {
 			} else {
 				combinedAlias = alias;
 			}
-			return "`" + combinedAlias + "`.";
+			return '"' + combinedAlias + '".';
 		}), sql.params);
 	}
 
 	linkFieldName(tableName: string) {
-		return tableName + "_id";
+		return tableName + '_id';
 	}
 	
 	determineIdField(clz: Function) {

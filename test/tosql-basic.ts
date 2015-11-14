@@ -101,7 +101,7 @@ function testToSql(query: QueryBuilder, expectedSql: string) {
 }
 
 function norm(sql: string) {
-	return sql.trim().replace(/\s+/g, " ").replace(/\"/g, "`");
+	return sql.trim().replace(/\s+/g, " ");
 }
 
 function build(clz: Function): QueryBuilder {

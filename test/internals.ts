@@ -37,7 +37,7 @@ export function tableMapping() {
 }
 	
 export function resolveAliases() {
-	test.equal(QueryBuilder.resolveAliases(new SqlExpression("{this}.name"), "user").sql, "`user`.name", "resolveSimple");			
-	test.equal(QueryBuilder.resolveAliases(new SqlExpression("{author}.name"), "user").sql, "`user.author`.name", "resolveSimple");			
+	test.equal(QueryBuilder.resolveAliases(new SqlExpression("{this}.name"), "user").sql, '"user".name', "resolveSimple");			
+	test.equal(QueryBuilder.resolveAliases(new SqlExpression("{author}.name"), "user").sql, '"user.author".name', "resolveSimple");			
 }
 	
