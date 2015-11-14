@@ -1,6 +1,6 @@
 import "source-map-support/register"
 import "reflect-metadata"
-import {internal as assert} from "assert";
+import * as test from "./test-utils";
 
 import {table, id, char, joinOne, joinMany} from "../metadata"
 import {QueryBuilder} from "../pojoquery"
@@ -57,18 +57,18 @@ function build(clz: Function): QueryBuilder {
 }
 
 export function getSuperclass() {
-	assert.equal(new QueryBuilder(User).getSuperclass(ArticleDetail), Article, "getSuperclass");
+	test.equal(new QueryBuilder(User).getSuperclass(ArticleDetail), Article, "getSuperclass");
 }
 	
 export function tableMapping() {
 	let mapping = new QueryBuilder(User).determineTableMapping(ArticleDetail)
-	assert.equal(mapping.length, 1, "One table");
-	assert.equal(mapping[0].fields.length, 3, "Three fields");
+	test.equal(mapping.length, 1, "One table");
+	test.equal(mapping[0].fields.length, 3, "Three fields");
 }
 	
 export function resolveAliases() {
-	assert.equal(QueryBuilder.resolveAliases(new SqlExpression("{this}.name"), "user").sql, "`user`.name", "resolveSimple");			
-	assert.equal(QueryBuilder.resolveAliases(new SqlExpression("{author}.name"), "user").sql, "`user.author`.name", "resolveSimple");			
+	test.equal(QueryBuilder.resolveAliases(new SqlExpression("{this}.name"), "user").sql, "`user`.name", "resolveSimple");			
+	test.equal(QueryBuilder.resolveAliases(new SqlExpression("{author}.name"), "user").sql, "`user.author`.name", "resolveSimple");			
 }
 	
 export function simpleQuery() {
@@ -121,5 +121,5 @@ export function atricleDetailWithAuthors() {
 }
 
 function testToSql(query: QueryBuilder, expectedSql: string) {
-	assert.equal(norm(query.toSql()), norm(expectedSql));
+	test.equal(norm(query.toSql()), norm(expectedSql));
 }

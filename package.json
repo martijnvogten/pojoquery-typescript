@@ -1,15 +1,15 @@
 {
-    "name": "riantis",
-    "version": "0.0.1",
-    "private": true,
-    "dependencies": {
-        "es6-promise": "3.0.2",
-        "reflect-metadata": "0.1.2",
-        "source-map-support": "0.3.2"
+  "name": "riantis",
+  "version": "0.0.1",
+  "private": true,
+  "dependencies": {
+    "es6-promise": "3.0.2",
+    "reflect-metadata": "0.1.2",
+    "source-map-support": "0.3.2"
   },
   "devDependencies": {
-      "mysql": "2.9.0",
-      "colors": "1.1.2",
-       "diff": "2.2.0"
+    "mysql": "2.9.0",
+    "colors": "1.1.2",
+    "diff": "2.2.0"
   }
 }

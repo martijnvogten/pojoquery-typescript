@@ -1,8 +1,24 @@
-import * as assert from "assert";
-import {internal} from "assert";
-
 import * as diff from "diff";
 import {green, red, bold} from "colors";
+
+export function equal(actual: any, expected: any, description?: string) {
+	if (actual != expected) {
+		throw new AssertionError(actual, expected, description);
+	}
+}
+
+export class AssertionError extends Error {
+	actual: any;
+	expected: string;
+	description: string;
+	
+	constructor(actual: any, expected: any, description: string) {
+		super("Assertion failed: " + description);
+		this.description = description;
+		this.actual = actual;
+		this.expected = expected;
+	}
+}
 
 function showDiffWithColors(one: string, other: string): string {
 	return diff.diffChars(one, other).map(part => {
@@ -23,8 +39,8 @@ export function runTests(tests: Object) {
 			console.log(testName + ": " + green.bold("OK"));
 		} catch (e) {
 			console.log(testName + ": " + red.bold("FAIL"));
-			if (e instanceof internal.AssertionError) {
-				let ae: internal.AssertionError = e;
+			if (e instanceof AssertionError) {
+				let ae: AssertionError = e;
 				console.log(ae.message);
 				if (typeof ae.expected == 'string') {
 					console.log("expected:", showDiffWithColors(ae.expected, ae.actual));

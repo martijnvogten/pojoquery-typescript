@@ -13,7 +13,7 @@
 		"pojoquery.ts",
 		"query.ts",
 		"metadata.ts",
-		"test-utils/test-utils.ts",
+		"test/test-utils.ts",
 		"test/runall.ts",
 		"integrationtests/update.ts",
 		"integrationtests/db/mysqldatabase.ts",
@@ -21,6 +21,7 @@
 		"typings/node.d.ts",
 		"typings/assert.d.ts",
 		"typings/diff.d.ts",
-		"typings/colors.d.ts"
+		"typings/colors.d.ts",
+		"typings/nodeunit.d.ts"
 	]
 }

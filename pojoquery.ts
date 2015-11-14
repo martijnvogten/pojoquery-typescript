@@ -2,8 +2,6 @@ import "source-map-support/register"
 import "reflect-metadata"
 import * as assert from "assert";
 
-import {runTests} from "./test-utils/test-utils"
-
 import {SqlQuery,SqlExpression,JoinType} from "./query"
 import * as meta from "./metadata"
 import {table, id, joinMany, joinOne, char, FieldMeta} from "./metadata"

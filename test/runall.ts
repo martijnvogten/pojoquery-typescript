@@ -1,4 +1,4 @@
 import * as basic from "./basic"
-import {runTests} from "../test-utils/test-utils"
+import {runTests} from "./test-utils"
 
 runTests(basic);
