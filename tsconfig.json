@@ -14,6 +14,7 @@
 		"query.ts",
 		"metadata.ts",
 		"test-utils/test-utils.ts",
+		"test/runall.ts",
 		"integrationtests/update.ts",
 		"integrationtests/db/mysqldatabase.ts",
 		"typings/mysql.d.ts",

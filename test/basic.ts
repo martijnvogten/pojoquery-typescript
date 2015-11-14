@@ -1,6 +1,6 @@
 import "source-map-support/register"
 import "reflect-metadata"
-import * as assert from "assert";
+import {internal as assert} from "assert";
 
 import {table, id, char, joinOne, joinMany} from "../metadata"
 import {QueryBuilder} from "../pojoquery"
