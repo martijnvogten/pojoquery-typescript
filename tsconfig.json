@@ -16,6 +16,7 @@
 		"test/test-utils.ts",
 		"test/internals.ts",
 		"test/tosql-basic.ts",
+		"test/tosql-embedded.ts",
 		"test/tosql-many2many.ts",
 		"test/runall.ts",
 		"integrationtests/update.ts",

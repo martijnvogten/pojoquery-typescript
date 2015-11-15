@@ -4,7 +4,7 @@ import * as assert from "assert";
 
 import {SqlQuery,SqlExpression,JoinType} from "./query"
 import * as meta from "./metadata"
-import {table, id, joinMany, joinOne, text, FieldMeta} from "./metadata"
+import {table, id, joinMany, joinOne, text, FieldMeta, embedded} from "./metadata"
 
 export interface DatabaseConnection {
 	query(sql: string, params: any[]): Promise<Object[]>;
@@ -80,7 +80,7 @@ export class QueryBuilder {
 	constructor(clz: Function) {
 		let tableMappings = this.determineTableMapping(clz);
 		if (tableMappings.length == 0) {
-			throw `Missing @table decorator on class ${clz.name} or any of its superclasses`;
+			throw `Missing @table decorator on class ${clz.name} and all of its superclasses`;
 		}
 		let topMapping = tableMappings[tableMappings.length - 1];
 		this.rootAlias = topMapping.tableName;
@@ -122,6 +122,7 @@ export class QueryBuilder {
 					joinCondition  = new SqlExpression("{" + linkTableAlias + "}." + linkTableField + " = {" + linkAlias + "}." + foreignIdField.fieldName)					
 					this.query.addJoin(JoinType.LEFT, foreignTable, linkAlias, joinCondition)
 					
+					this.aliases[linkAlias] = new Alias(linkAlias, componentType, alias, f, [foreignIdField]);
 					this.addClass(componentType, linkAlias, alias, f);
 				} else {
 					let componentType = f.props.linkedClass;
@@ -132,8 +133,20 @@ export class QueryBuilder {
 				let componentType = f.props.linkedClass;
 				let linkAlias = this.joinOne(alias, f, componentType);
 				this.addClass(componentType, linkAlias, alias, f);
+			} else if (f.type == embedded) {
+				let prefix = (f.props && f.props.prefix) || "";
+
+				let foreignalias = alias == this.rootAlias ? f.fieldName : alias + "." + f.fieldName 
+				this.collectFieldsOfClass(f.props.linkedClass, null).forEach(embeddedField => {
+					this.query.addField(
+						'{' + alias + '}.' + prefix + embeddedField.fieldName,
+						foreignalias + "." + embeddedField.fieldName
+					);
+				});
+				this.aliases[foreignalias] = new Alias(foreignalias, f.props.linkedClass, alias, f, this.determineIdFields(f.props.linkedClass));
 			} else {
 				let selectExpression;
+
 				if (f.props && f.props.expression) {
 					selectExpression = QueryBuilder.resolveAliases(new SqlExpression(f.props.expression), alias);
 				} else {

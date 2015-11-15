@@ -35,6 +35,7 @@ export interface FieldMetaProps {
 	linkedClass?: Function;
 	joinCondition?: string;
 	linkTable?: string;
+	prefix?: string;
 }
 
 export interface FieldMeta {
@@ -88,5 +89,14 @@ export function joinOne(linkedClass: Function, props?: FieldMetaProps) {
 	return function field(target: any, key: string) {
 		var fields = getFields(target.constructor);
 		fields.push({declaringClass: target.constructor, fieldName: key, type: joinOne, props});
+	}
+}
+
+export function embedded(linkedClass: Function, props?: FieldMetaProps) {
+	props = props || {};
+	props.linkedClass = linkedClass;
+	return function field(target: any, key: string) {
+		var fields = getFields(target.constructor);
+		fields.push({declaringClass: target.constructor, fieldName: key, type: embedded, props});
 	}
 }
