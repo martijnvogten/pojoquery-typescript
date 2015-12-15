@@ -182,7 +182,7 @@ export class QueryBuilder {
 		let tableName = this.determineTableName(componentType);
 		let ownMapping = this.determineTableMapping(f.declaringClass);
 		let idField = this.determineIdField(f.declaringClass).fieldName;
-		let linkField = this.linkFieldName(ownMapping[0].tableName);
+		let linkField = (f.props && f.props.linkField) || this.linkFieldName(ownMapping[0].tableName);
 		
 		let joinCondition: SqlExpression = null;
 		if (f.props && f.props.joinCondition) {
@@ -239,11 +239,13 @@ export class QueryBuilder {
 	}
 	
 	toSql() {
-		return this.query.toSql();
+		let sqlExpr = this.query.toSqlExpression();
+		return sqlExpr.sql;
 	}
 	
 	execute<R>(db: DatabaseConnection, params?: any[]): Promise<R[]> {
-		return db.query(this.toSql(), params).then(rows => {
+		let sqlExpr = this.query.toSqlExpression();
+		return db.query(sqlExpr.sql, sqlExpr.params).then(rows => {
 			return this.processRows(rows) as R[]
 		});
 	}
