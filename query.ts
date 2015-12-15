@@ -1,6 +1,8 @@
 import * as meta from './metadata'
 import {QueryBuilder} from './pojoquery'
 
+type Implodable = SqlExpression | string;
+
 export class SqlExpression {
 	sql: string;
 	params: any[];
@@ -14,12 +16,18 @@ export class SqlExpression {
 		return this.sql;
 	}
 	
-	static implode(glue: string, expressions: SqlExpression[]): SqlExpression {
+	static implode(glue: string, expressions: Implodable[]): SqlExpression {
 		let sqlParts: string[] = [];
 		let params: any[] = [];
 		expressions.forEach(part => {
-			sqlParts.push(part.sql);
-			params = params.concat(part.params);
+			if (part instanceof SqlExpression) {
+				sqlParts.push(part.sql);
+				if (part.params) {
+					params = params.concat(part.params);
+				}
+			} else {
+				sqlParts.push(part);
+			}
 		});
 		return new SqlExpression(sqlParts.join(glue), params);
 	}
@@ -75,7 +83,7 @@ export class SqlQuery {
 		this.joins.push({joinType, table, alias, joinCondition});
 	}
 	
-	toSql() {
+	toSqlExpression(): SqlExpression {
 		let fields = SqlExpression.implode(",\n ", this.fields.map(field => {
 			if (field.alias == null) {
 				return field.expression;
@@ -85,7 +93,7 @@ export class SqlQuery {
 				return new SqlExpression(sql, resolved.params);
 			}
 		}));
-
+		
 		let joinExpressions = this.joins.map(j => {
 			let sql = j.joinType.getSql() + " JOIN " + j.table + " AS \"" + j.alias + "\"";
 			let resolved = QueryBuilder.resolveAliases(j.joinCondition, "");
@@ -94,17 +102,21 @@ export class SqlQuery {
 			}
 			return new SqlExpression(sql, resolved.params);
 		});
-		let joinsClause = SqlExpression.implode("\n ", joinExpressions);
 		
-		let wheres = this.wheres.map(w => w.toSql()).join(" AND ");
-		return [
-			"SELECT\n",
-			fields.sql,
-			"FROM\n",
-			this.tableName,
-			joinsClause.sql,
-			wheres.length && "WHERE " + wheres, 
-		].filter(it => !!it).join(' ');
+		
+		let clauses: Implodable[] = ["SELECT\n", fields, "FROM\n", this.tableName];
+		
+		if (joinExpressions.length) {
+			let joinsClause = SqlExpression.implode("\n ", joinExpressions);
+			clauses.push(joinsClause);
+		}
+		
+		if (this.wheres.length) {
+			clauses.push("WHERE");
+			clauses.push(SqlExpression.implode(' AND ', this.wheres));
+		}
+		
+		return SqlExpression.implode(' ', clauses);
 	}
 }
 
