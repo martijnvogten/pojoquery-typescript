@@ -60,6 +60,15 @@ export function simpleWhereClause() {
 		`SELECT "user".id AS "user.id", "user".email AS "user.email" FROM user WHERE id = ?`
 	);
 }
+export function simpleWhereClauseCheckParamValue() {
+	let db = {
+		query: (sql, params) => {
+			test.equal(params[0], 1);
+			return Promise.resolve({});
+		}
+	};
+	build(User).addWhere("id = ?", 1).querySingleRow(db);
+}
 	
 export function simpleArticleQuery() {
 	testToSql(
