@@ -60,6 +60,13 @@ export function text(props?: FieldMetaProps) {
 	}
 }
 
+export function number(props?: FieldMetaProps) {
+	return function field(target: any, key: string) {
+		var fields = getFields(target.constructor);
+		fields.push({declaringClass: target.constructor, fieldName: key, type: number, props: props});
+	}
+}
+
 export function foreignId(props?: FieldMetaProps) {
 	return function field(target: any, key: string) {
 		var fields = getFields(target.constructor);
