@@ -67,6 +67,13 @@ export function number(props?: FieldMetaProps) {
 	}
 }
 
+export function bool(props?: FieldMetaProps) {
+	return function field(target: any, key: string) {
+		var fields = getFields(target.constructor);
+		fields.push({declaringClass: target.constructor, fieldName: key, type: bool, props: props});
+	}
+}
+
 export function foreignId(props?: FieldMetaProps) {
 	return function field(target: any, key: string) {
 		var fields = getFields(target.constructor);

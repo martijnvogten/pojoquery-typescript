@@ -238,6 +238,11 @@ export class QueryBuilder {
 		return this;
 	}
 	
+	addOrderBy(fieldName: string, ascending: boolean): QueryBuilder {
+		this.query.addOrderBy(fieldName, ascending);
+		return this;
+	}
+	
 	toSql() {
 		let sqlExpr = this.query.toSqlExpression();
 		return sqlExpr.sql;

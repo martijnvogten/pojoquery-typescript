@@ -66,6 +66,7 @@ export class SqlQuery {
 	private joins: SqlJoin[] = [];
 	private fields: SqlField[] = [];
 	private wheres: SqlExpression[] = [];
+	private orderBys: SqlExpression[] = [];
 	
 	constructor(tableName: string) {
 		this.tableName = tableName;
@@ -77,6 +78,10 @@ export class SqlQuery {
 	
 	addWhere(where: SqlExpression) {
 		this.wheres.push(where);
+	}
+	
+	addOrderBy(fieldName: string, ascending: boolean) {
+		this.orderBys.push(new SqlExpression('"' + fieldName + '" ' + (ascending ? "ASC" : "DESC")));
 	}
 	
 	addJoin(joinType: JoinType, table: string, alias: string, joinCondition: SqlExpression) {
@@ -95,7 +100,7 @@ export class SqlQuery {
 		}));
 		
 		let joinExpressions = this.joins.map(j => {
-			let sql = j.joinType.getSql() + " JOIN " + j.table + " AS \"" + j.alias + "\"";
+			let sql = j.joinType.getSql() + ' JOIN "' + j.table + '" AS "' + j.alias + '"';
 			let resolved = QueryBuilder.resolveAliases(j.joinCondition, "");
 			if (j.joinCondition != null) {
 				sql += " ON " + resolved.sql;
@@ -114,6 +119,11 @@ export class SqlQuery {
 		if (this.wheres.length) {
 			clauses.push("WHERE");
 			clauses.push(SqlExpression.implode(' AND ', this.wheres));
+		}
+		
+		if (this.orderBys.length) {
+			clauses.push("ORDER BY");
+			clauses.push(SqlExpression.implode(', ', this.orderBys));
 		}
 		
 		return SqlExpression.implode(' ', clauses);
