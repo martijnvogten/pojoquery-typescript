@@ -50,14 +50,14 @@ class ArticleDetailWithCommentAuthors extends Article {
 export function simpleQuery() {
 	testToSql(
 		build(User), 
-		`SELECT "user".id AS "user.id", "user".email AS "user.email" FROM user`
+		`SELECT "user".id AS "user.id", "user".email AS "user.email" FROM "user"`
 	);
 }
 	
 export function simpleWhereClause() {
 	testToSql(
 		build(User).addWhere("id = ?", 1),
-		`SELECT "user".id AS "user.id", "user".email AS "user.email" FROM user WHERE id = ?`
+		`SELECT "user".id AS "user.id", "user".email AS "user.email" FROM "user" WHERE id = ?`
 	);
 }
 export function simpleWhereClauseCheckParamValue() {
@@ -73,7 +73,7 @@ export function simpleWhereClauseCheckParamValue() {
 export function simpleArticleQuery() {
 	testToSql(
 		build(Article), 
-		`SELECT "article".id AS "article.id", "article".title AS "article.title" FROM article`
+		`SELECT "article".id AS "article.id", "article".title AS "article.title" FROM "article"`
 	);
 }
 export function atricleDetail() {
@@ -84,8 +84,8 @@ export function atricleDetail() {
 			"article".title AS "article.title",
 			"comments".id AS "comments.id", 
 			"comments".comment AS "comments.comment" 
-		FROM article 
-			LEFT JOIN comment AS "comments" ON "article".id = "comments".article_id`
+		FROM "article" 
+			LEFT JOIN "comment" AS "comments" ON "article".id = "comments".article_id`
 	);
 }
 	
@@ -99,9 +99,9 @@ export function atricleDetailWithAuthors() {
 			"comments".comment AS "comments.comment", 
 			"comments.author".id AS "comments.author.id", 
 			"comments.author".email AS "comments.author.email" 
-		FROM article 
-			LEFT JOIN comment AS "comments" ON "article".id = "comments".article_id 
-			LEFT JOIN user AS "comments.author" ON "comments".author_id = "comments.author".id`
+		FROM "article" 
+			LEFT JOIN "comment" AS "comments" ON "article".id = "comments".article_id 
+			LEFT JOIN "user" AS "comments.author" ON "comments".author_id = "comments.author".id`
 	);
 }
 

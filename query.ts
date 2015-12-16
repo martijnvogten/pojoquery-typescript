@@ -109,7 +109,7 @@ export class SqlQuery {
 		});
 		
 		
-		let clauses: Implodable[] = ["SELECT\n", fields, "FROM\n", this.tableName];
+		let clauses: Implodable[] = ["SELECT\n", fields, "FROM\n", '"' + this.tableName + '"'];
 		
 		if (joinExpressions.length) {
 			let joinsClause = SqlExpression.implode("\n ", joinExpressions);

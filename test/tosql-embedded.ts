@@ -42,7 +42,7 @@ export function testBasicEmbedded() {
 			"student".home_zipcode AS "homeAddress.zipcode", 
 			"student".home_city AS "homeAddress.city", 
 			"student".home_country AS "homeAddress.country" 
-		FROM student
+		FROM "student"
 		`
 	);
 }
