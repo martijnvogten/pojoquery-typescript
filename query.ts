@@ -1,7 +1,7 @@
 import * as meta from './metadata'
 import {QueryBuilder} from './pojoquery'
 
-type Implodable = SqlExpression | string;
+export type Implodable = SqlExpression | string;
 
 export class SqlExpression {
 	sql: string;

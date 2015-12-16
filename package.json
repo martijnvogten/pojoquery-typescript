@@ -1,15 +1,37 @@
 {
-  "name": "riantis",
+  "name": "pojoquery",
   "version": "0.0.1",
-  "private": true,
+  "description": "Zero configuration strongly typed ORM alternative",
+  "main": "js/pojoquery.js",
+  "directories": {
+    "test": "test"
+  },
   "dependencies": {
-    "reflect-metadata": "0.1.2",
-    "source-map-support": "0.3.2"
+    "reflect-metadata": "0.1.2"
   },
   "devDependencies": {
+    "source-map-support": "0.3.2",
     "typescript": "next",
     "mysql": "2.9.0",
     "colors": "1.1.2",
     "diff": "2.2.0"
-  }
+  },
+  "scripts": {
+    "test": "js/test/runall.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/martijnvogten/pojoquery-typescript.git"
+  },
+  "keywords": [
+    "typescript",
+    "orm",
+    "sql"
+  ],
+  "author": "Martijn Vogten",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/martijnvogten/pojoquery-typescript/issues"
+  },
+  "homepage": "https://github.com/martijnvogten/pojoquery-typescript#readme"
 }

@@ -32,7 +32,7 @@ class IdValue {
 	}
 }
 
-class TableMapping {
+export class TableMapping {
 
 	public tableName: string;
 	public clz: Function;
@@ -71,11 +71,11 @@ class Alias {
 }
 
 export class QueryBuilder {
-	query: SqlQuery;
-	resultClass: Function;
-	rootAlias: string;
-	aliases = new Map<string,Alias>();
-	fieldMappings = new Map<string,SimpleFieldMapping>();
+	private query: SqlQuery;
+	private resultClass: Function;
+	private rootAlias: string;
+	private aliases = new Map<string,Alias>();
+	private fieldMappings = new Map<string,SimpleFieldMapping>();
 	
 	constructor(clz: Function) {
 		let tableMappings = this.determineTableMapping(clz);
@@ -395,7 +395,7 @@ export class QueryBuilder {
 		return true;
 	}
 	
-	createId(alias: string, values: Object, idFields: FieldMeta[]) {
+	private createId(alias: string, values: Object, idFields: FieldMeta[]) {
 		let params = [];
 		idFields.forEach(f => {
 			params.push(values[alias + "." + f.fieldName]);

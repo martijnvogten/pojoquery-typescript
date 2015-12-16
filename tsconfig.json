@@ -3,8 +3,9 @@
 		"target": "ES6",
 		"module": "commonjs",
 		"sourceMap": true,
-		"outDir": "build",
-		"experimentalDecorators": true
+		"outDir": "js",
+		"experimentalDecorators": true,
+		"declaration": true
 	},
 	 "exclude": [
         "node_modules"
@@ -12,6 +13,7 @@
 	"files": [
 		"pojoquery.ts",
 		"query.ts",
+		"index.ts",
 		"metadata.ts",
 		"test/test-utils.ts",
 		"test/internals.ts",

@@ -1,5 +1,28 @@
 import "source-map-support/register"
 import {MySQLDatabase} from "./db/mysqldatabase"
+import {text,id,timestamp} from "../metadata"
+
+class User {
+	@id
+	id: number;
+	
+	@text()
+	username: string;
+	
+	@text()
+	email: string;
+}
+
+class UserRecord extends User {
+	@text()
+	password: string;
+	
+	@timestamp()
+	created_at: Date;
+	
+	@timestamp()
+	updated_at: Date;
+}
 
 async function testTransactions() {
 	const db = new MySQLDatabase("127.0.0.1", "root", "");

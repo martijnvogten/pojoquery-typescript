@@ -12,7 +12,7 @@ export interface ConnectionCallback<T> {
 	(param: mysql.IConnection): T;
 }
 
-class MySQLConnection {
+export class MySQLConnection {
 	private conn: mysql.IConnection;
 	
 	constructor(conn: mysql.IConnection) {

@@ -3,6 +3,7 @@
 	// List of configurations. Add new configurations or edit existing ones.
 	"configurations": [
 		{
+			"request": "launch",
 			"name": "Launch unittests",
 			"type": "node",
 			"program": "build/test/runall.js",
@@ -18,6 +19,7 @@
 			"outDir": "build"
 		},
 		{
+			"request": "launch",
 			"name": "Launch integrationtests",
 			"type": "node",
 			"program": "build/integrationtests/update.js",
