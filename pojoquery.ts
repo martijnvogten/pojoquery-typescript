@@ -145,10 +145,10 @@ export class QueryBuilder {
 				});
 				this.aliases[foreignalias] = new Alias(foreignalias, f.props.linkedClass, alias, f, this.determineIdFields(f.props.linkedClass));
 			} else {
-				let selectExpression;
+				let selectExpression: string;
 
 				if (f.props && f.props.expression) {
-					selectExpression = QueryBuilder.resolveAliases(new SqlExpression(f.props.expression), alias);
+					selectExpression = QueryBuilder.resolveAliases(new SqlExpression(f.props.expression), alias).sql;
 				} else {
 					let fieldName = (f.props && f.props.fieldName) || f.fieldName;
 					selectExpression = "{" + alias + "}." + fieldName;
