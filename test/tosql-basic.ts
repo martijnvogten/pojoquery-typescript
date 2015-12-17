@@ -61,11 +61,9 @@ export function simpleWhereClause() {
 	);
 }
 export function simpleWhereClauseCheckParamValue() {
-	let db = {
-		query: (sql, params) => {
-			test.equal(params[0], 1);
-			return Promise.resolve({});
-		}
+	let db = (sql, params) => {
+		test.equal(params[0], 1);
+		return Promise.resolve({});
 	};
 	build(User).addWhere("id = ?", 1).querySingleRow(db);
 }
