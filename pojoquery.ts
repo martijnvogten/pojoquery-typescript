@@ -7,7 +7,7 @@ import * as meta from "./metadata"
 import {table, id, joinMany, joinOne, text, FieldMeta, embedded} from "./metadata"
 
 export interface DatabaseConnection {
-	(sql: string, params: any[]): Promise<Object[]>;
+	query(sql: string, params: any[]): Promise<Object[]>;
 }
 
 class IdValue {
@@ -250,7 +250,7 @@ export class QueryBuilder {
 	
 	execute<R>(db: DatabaseConnection, params?: any[]): Promise<R[]> {
 		let sqlExpr = this.query.toSqlExpression();
-		return db(sqlExpr.sql, sqlExpr.params).then(rows => {
+		return db.query(sqlExpr.sql, sqlExpr.params).then(rows => {
 			return this.processRows(rows) as R[]
 		});
 	}
