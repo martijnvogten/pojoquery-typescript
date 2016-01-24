@@ -29,9 +29,9 @@ class OrderItem {
 
 @table("order")
 class Order {
-	@id
-	id: string;
-	
+    @id
+    id: string;
+    
     @joinMany(OrderItem)
     orderItems: OrderItem[];
     

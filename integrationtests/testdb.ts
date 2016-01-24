@@ -7,7 +7,7 @@ function getDb(schema?: string): MySQLDatabase {
 export async function withEmptyDatabase(callback: (db: MySQLDatabase) => void) {
     let db = getDb();
     try {
-		await db.withConnection(async (conn) => {
+        await db.withConnection(async (conn) => {
             await conn.query("DROP DATABASE IF EXISTS `pojoquery_test`");
             await conn.query("CREATE DATABASE `pojoquery_test` DEFAULT CHARSET utf8");
         });
