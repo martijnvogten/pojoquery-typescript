@@ -1,4 +1,3 @@
-import "reflect-metadata"
 import * as test from "./test-utils";
 
 import {table, id, text, joinOne, joinMany} from "../metadata"

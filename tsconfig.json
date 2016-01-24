@@ -1,6 +1,6 @@
 {
 	"compilerOptions": {
-		"target": "ES6",
+		"target": "es6",
 		"module": "commonjs",
 		"sourceMap": true,
 		"outDir": "js",
@@ -9,25 +9,5 @@
 	},
 	 "exclude": [
         "node_modules"
-    ],
-	"files": [
-		"pojoquery.ts",
-		"query.ts",
-		"index.ts",
-		"metadata.ts",
-		"test/test-utils.ts",
-		"test/internals.ts",
-		"test/tosql-basic.ts",
-		"test/tosql-expressions.ts",
-		"test/tosql-embedded.ts",
-		"test/tosql-many2many.ts",
-		"test/runall.ts",
-		"integrationtests/update.ts",
-		"integrationtests/db/mysqldatabase.ts",
-		"typings/mysql.d.ts",
-		"typings/node.d.ts",
-		"typings/assert.d.ts",
-		"typings/diff.d.ts",
-		"typings/colors.d.ts"
-	]
+    ]
 }

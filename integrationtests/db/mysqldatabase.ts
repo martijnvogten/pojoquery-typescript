@@ -1,9 +1,10 @@
 var mysql = require("mysql");
 
 export function sql(parts: string[], ...values: any[]): string {
-	var result = parts.shift();
+    let index = 0;
+	var result = parts[index++];
 	values.forEach(val => {
-		result += mysql.escape(val) + parts.shift();
+		result += mysql.escape(val) + parts[index++];
 	});
 	return result;
 }
@@ -76,6 +77,9 @@ export class MySQLDatabase {
 	
 	constructor(host: string, user: string, password: string, database?: string) {
 		this.pool = mysql.createPool({host, user, password, database});
+		this.pool.on('connection', function (connection) {
+			connection.query(`SET SESSION sql_mode='ANSI_QUOTES'`);
+		});
 	}
 	
 	private getConnection(): Promise<MySQLConnection> {

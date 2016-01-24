@@ -7,10 +7,10 @@ export function equal(actual: any, expected: any, description?: string) {
 	}
 }
 
-export function runTests(tests: Object) {
-	Object.keys(tests).forEach(testName => {
+export async function runTests(tests: Object) {
+	for(let testName in tests) {
 		try {
-			tests[testName]();
+            let result = await tests[testName]();
 			console.log(testName + ": " + green.bold("OK"));
 		} catch (e) {
 			console.log(testName + ": " + red.bold("FAIL"));
@@ -24,10 +24,16 @@ export function runTests(tests: Object) {
 					console.log("expected:", ae.expected);
 					console.log("actual  :", ae.actual);
 				}
-			}
+                if (e.stack) {
+                    let stackLines : string[] = e.stack.toString().split(/\n/g);
+                    console.log(stackLines.slice(3).join("\n"));
+                }
+            } else {
+                console.log(e.stack);
+            }
 			throw e;
 		}
-	});
+	}
 }
 
 export class AssertionError extends Error {
