@@ -311,9 +311,9 @@ export class QueryBuilder {
         let result: R[] = [];
         let allEntities: {id: IdValue, entity: Object}[] = [];
         
-        rows.forEach(row => {
+        for(let row of rows) {
             let onThisRow = this.collectValuesByAlias(row);
-            Object.keys(this.aliases).forEach(aliasName => {
+            for(let aliasName in this.aliases) {
                 let a = this.aliases[aliasName];
                 
                 let values = onThisRow[a.alias];
@@ -324,7 +324,8 @@ export class QueryBuilder {
                 let id = this.createId(a.alias, values, a.idFields);
                 
                 if (a.parentAlias == null) {
-                    // Primary alias
+                    // Primary 
+                    
                     if (allEntities.filter(entry => entry.id.equals(id)).length == 0) {
                         let entity = this.buildEntityFromValues(values, aliasName) as R;
                         allEntities.push({id, entity});
@@ -351,14 +352,16 @@ export class QueryBuilder {
                     if (a.linkField.type == joinMany) {
                         if (!parent[targetFieldName]) {
                             parent[targetFieldName] = [];
-                        } 
-                        parent[targetFieldName].push(entity);
+                        }
+                        if (parent[targetFieldName].indexOf(entity) == -1) {
+                            parent[targetFieldName].push(entity);
+                        }
                     } else {
                         parent[targetFieldName] = entity;
                     }
                 }
-            });
-        });
+            };
+        };
         return result;
     }
     
@@ -400,7 +403,7 @@ export class QueryBuilder {
         return true;
     }
     
-    private createId(alias: string, values: Object, idFields: FieldMeta[]) {
+    private createId(alias: string, values: Object, idFields: FieldMeta[]): IdValue {
         let params = [];
         idFields.forEach(f => {
             params.push(values[alias + "." + f.fieldName]);
