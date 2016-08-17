@@ -60,6 +60,7 @@ class Alias {
     linkField: FieldMeta;
     idFields: FieldMeta[];
     isLinkedValue: boolean;
+    factoryFunc: Function;
 
     constructor(alias: string, clz: Function, parentAlias: string, linkField: FieldMeta, idFields: FieldMeta[]) {
         this.alias = alias;
@@ -67,6 +68,7 @@ class Alias {
         this.parentAlias = parentAlias;
         this.linkField = linkField;
         this.idFields = idFields;
+        this.factoryFunc = clz.bind(clz);
     }
 }
 
@@ -327,7 +329,7 @@ export class QueryBuilder {
                     // Primary 
                     
                     if (allEntities.filter(entry => entry.id.equals(id)).length == 0) {
-                        let entity = this.buildEntityFromValues(values, aliasName) as R;
+                        let entity = this.buildEntityFromValues(a.factoryFunc, values, aliasName) as R;
                         allEntities.push({id, entity});
                         result.push(entity);
                     }
@@ -342,7 +344,7 @@ export class QueryBuilder {
                     let entityEntry = allEntities.filter(entry => entry.id.equals(id))[0];
                     let entity;
                     if (!entityEntry) {
-                        entity = this.buildEntityFromValues(values, aliasName);
+                        entity = this.buildEntityFromValues(a.factoryFunc, values, aliasName);
                         allEntities.push({id, entity});
                     } else {
                         entity = entityEntry.entity;
@@ -365,8 +367,9 @@ export class QueryBuilder {
         return result;
     }
     
-    buildEntityFromValues<R>(values: Object, aliasName: string): R {
-        let result = {};
+    buildEntityFromValues<R>(factoryFunc: any, values: Object, aliasName: string): R {
+        let result = new factoryFunc();
+
         Object.keys(values).forEach(key => {
             let prop = key.substring(aliasName.length + 1);
             result[prop] = values[key];
