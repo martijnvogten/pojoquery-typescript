@@ -67,6 +67,8 @@ export class SqlQuery {
     private fields: SqlField[] = [];
     private wheres: SqlExpression[] = [];
     private orderBys: SqlExpression[] = [];
+    private limit: number = -1;
+    private startIndex: number = -1;
     
     constructor(tableName: string) {
         this.tableName = tableName;
@@ -82,6 +84,14 @@ export class SqlQuery {
     
     addOrderBy(fieldName: string, ascending: boolean) {
         this.orderBys.push(new SqlExpression('"' + fieldName + '" ' + (ascending ? "ASC" : "DESC")));
+    }
+
+    setLimit(maxRows: number) {
+        this.limit = maxRows;
+    }
+    
+    setStartIndex(index: number) {
+        this.startIndex = index;
     }
     
     addJoin(joinType: JoinType, table: string, alias: string, joinCondition: SqlExpression) {
@@ -124,6 +134,12 @@ export class SqlQuery {
         if (this.orderBys.length) {
             clauses.push("ORDER BY");
             clauses.push(SqlExpression.implode(', ', this.orderBys));
+        }
+
+        if (this.startIndex > -1 && this.limit > -1) {
+            clauses.push("LIMIT " + this.startIndex + ", " + this.limit);
+        } else if (this.limit > -1) {
+            clauses.push("LIMIT " + this.limit);
         }
         
         return SqlExpression.implode(' ', clauses);

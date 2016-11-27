@@ -244,6 +244,14 @@ export class QueryBuilder {
         this.query.addOrderBy(fieldName, ascending);
         return this;
     }
+
+    setLimit(maxRows: number, startIndex?: number): QueryBuilder {
+        this.query.setLimit(maxRows);
+        if (startIndex > -1) {
+            this.query.setStartIndex(startIndex);
+        }
+        return this;
+    }
     
     toSql() {
         let sqlExpr = this.query.toSqlExpression();
