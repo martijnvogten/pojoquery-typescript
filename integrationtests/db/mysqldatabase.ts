@@ -1,6 +1,6 @@
 var mysql = require("mysql");
 
-export function sql(parts: string[], ...values: any[]): string {
+export function sql(parts: TemplateStringsArray, ...values: any[]): string {
     let index = 0;
     var result = parts[index++];
     values.forEach(val => {
