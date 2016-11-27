@@ -1,6 +1,6 @@
 {
   "name": "pojoquery",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "description": "Zero configuration strongly typed ORM alternative",
   "main": "js/index.js",
   "directories": {
@@ -11,7 +11,7 @@
   },
   "devDependencies": {
     "source-map-support": "0.3.2",
-    "typescript": "next",
+    "typescript": "2.0.3",
     "mysql": "2.9.0",
     "colors": "1.1.2",
     "diff": "2.2.0"
