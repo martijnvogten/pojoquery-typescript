@@ -328,7 +328,7 @@ export class QueryBuilder {
                 
                 let values = onThisRow[a.alias];
                 if (this.allNulls(values)) {
-                    return;
+                    continue;
                 }
                 
                 let id = this.createId(a.alias, values, a.idFields);
