@@ -6,33 +6,33 @@
 			"request": "launch",
 			"name": "Launch unittests",
 			"type": "node",
-			"program": "build/test/runall.js",
+			"program": "${workspaceRoot}/js/test/runall.js",
 			"stopOnEntry": false,
 			"args": [],
-			"cwd": ".",
+			"cwd": "${workspaceRoot}",
 			"runtimeExecutable": null,
 			"runtimeArgs": ["--nolazy", "--harmony", "--use-strict"],
 			"env": {
 				"NODE_ENV": "development"
 			},
 			"sourceMaps": true,
-			"outDir": "build"
+			"outDir": "${workspaceRoot}/js"
 		},
 		{
 			"request": "launch",
 			"name": "Launch integrationtests",
 			"type": "node",
-			"program": "build/integrationtests/update.js",
+			"program": "${workspaceRoot}/js/integrationtests/update.js",
 			"stopOnEntry": false,
 			"args": [],
-			"cwd": ".",
+			"cwd": "${workspaceRoot}",
 			"runtimeExecutable": null,
 			"runtimeArgs": ["--nolazy", "--harmony", "--use-strict"],
 			"env": {
 				"NODE_ENV": "development"
 			},
 			"sourceMaps": true,
-			"outDir": "build"
+			"outDir": "${workspaceRoot}/js"
 		}
 		
 	]
