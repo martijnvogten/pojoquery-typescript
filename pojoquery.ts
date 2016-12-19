@@ -106,7 +106,7 @@ export class QueryBuilder {
                 if (props && props.linkTable) {
                     let linkTable = props.linkTable;
                     let ownMapping = this.determineTableMapping(f.declaringClass);
-                    let linkField = this.linkFieldName(ownMapping[0].tableName);
+                    let linkField = props.linkField || this.linkFieldName(ownMapping[0].tableName);
                     let linkTableAlias = alias == this.rootAlias ? linkTable : alias + "." + linkTable;
                     let idField = this.determineIdField(f.declaringClass);
                     
@@ -118,7 +118,7 @@ export class QueryBuilder {
                     let foreignMapping = this.determineTableMapping(componentType);
                     let foreignIdField = this.determineIdField(componentType);
                     let foreignTable = foreignMapping[0].tableName;
-                    let linkTableField = this.linkFieldName(foreignTable);
+                    let linkTableField = props.foreignLinkField || this.linkFieldName(foreignTable);
                     let linkAlias = alias == this.rootAlias ? f.fieldName : alias + "." + f.fieldName;
                     
                     joinCondition  = new SqlExpression("{" + linkTableAlias + "}." + linkTableField + " = {" + linkAlias + "}." + foreignIdField.fieldName)                 

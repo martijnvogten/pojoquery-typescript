@@ -32,6 +32,7 @@ export interface FieldMetaProps {
     expression?: string;
     fieldName?: string;
     linkField?: string;
+    foreignLinkField?: string;
     linkedClass?: Function;
     joinCondition?: string;
     linkTable?: string;
