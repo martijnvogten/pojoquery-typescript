@@ -285,7 +285,7 @@ export class QueryBuilder {
             if (ids.length == 0) {
                 return [];
             }
-            this.query.addWhere(new SqlExpression("\"" + this.query.getTableName() + "\"." + idFields[0].fieldName + " IN (?)", ids));
+            this.query.addWhere(new SqlExpression("\"" + this.query.getTableName() + "\"." + idFields[0].fieldName + " IN (?)", [ids]));
             return this.execute(db);
         })
     }

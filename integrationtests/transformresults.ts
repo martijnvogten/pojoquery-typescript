@@ -65,6 +65,9 @@ export function testLimitWithJoins(): Promise<void> {
 
         let limited = await new QueryBuilder(Order).queryLimitedList<Order>(db, 1);
         test.equal(limited.length, 1);
+
+        let two = await new QueryBuilder(Order).queryLimitedList<Order>(db, 2);
+        test.equal(two.length, 2);
     });
 }
 
