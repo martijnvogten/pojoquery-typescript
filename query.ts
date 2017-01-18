@@ -103,7 +103,7 @@ export class SqlQuery {
     }
 
     addOrderBy(fieldName: string, ascending: boolean) {
-        this.orderBys.push(new SqlExpression('"' + fieldName + '" ' + (ascending ? "ASC" : "DESC")));
+        this.orderBys.push(new SqlExpression(fieldName + ' ' + (ascending ? "ASC" : "DESC")));
     }
 
     setOrderBys(orderBys: SqlExpression[]): void {

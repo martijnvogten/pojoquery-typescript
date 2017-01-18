@@ -1,6 +1,6 @@
 {
   "name": "pojoquery",
-  "version": "0.0.14",
+  "version": "0.0.15",
   "description": "Zero configuration strongly typed ORM alternative",
   "main": "js/index.js",
   "directories": {
