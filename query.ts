@@ -54,7 +54,7 @@ export class JoinType {
     }
 }
 
-interface SqlJoin {
+export interface SqlJoin {
     joinType: JoinType;
     table: string;
     alias: string;
@@ -74,16 +74,44 @@ export class SqlQuery {
         this.tableName = tableName;
     }
     
+    getTableName(): string {
+        return this.tableName;
+    }
+
     addField(sql: string, fieldAlias: string) {
         this.fields.push({expression: new SqlExpression(sql), alias: fieldAlias});
+    }
+
+    setFields(fields: SqlField[]): void {
+        this.fields = fields;
+    }
+
+    getFields(): SqlField[] {
+        return this.fields;
     }
     
     addWhere(where: SqlExpression) {
         this.wheres.push(where);
     }
-    
+
+    setWheres(wheres: SqlExpression[]): void {
+        this.wheres = wheres;
+    }
+
+    getWheres(): SqlExpression[] {
+        return this.wheres;
+    }
+
     addOrderBy(fieldName: string, ascending: boolean) {
         this.orderBys.push(new SqlExpression('"' + fieldName + '" ' + (ascending ? "ASC" : "DESC")));
+    }
+
+    setOrderBys(orderBys: SqlExpression[]): void {
+        this.orderBys = orderBys;
+    }
+
+    getOrderBys(): SqlExpression[] {
+        return this.orderBys;
     }
 
     setLimit(maxRows: number) {
@@ -96,6 +124,14 @@ export class SqlQuery {
     
     addJoin(joinType: JoinType, table: string, alias: string, joinCondition: SqlExpression) {
         this.joins.push({joinType, table, alias, joinCondition});
+    }
+
+    setJoins(joins: SqlJoin[]): void {
+        this.joins = joins;
+    }
+
+    getJoins(): SqlJoin[] {
+        return this.joins;
     }
     
     toSqlExpression(): SqlExpression {

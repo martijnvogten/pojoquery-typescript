@@ -264,6 +264,31 @@ export class QueryBuilder {
             return this.processRows(rows) as R[]
         });
     }
+
+    queryLimitedList<R>(db: DatabaseConnection, maxResults: number, startIndex?: number): Promise<R[]> {
+        let idQuery = new SqlQuery(this.query.getTableName());
+        let idFields = this.determineIdFields(this.resultClass);
+        if (idFields.length > 1) {
+            throw `Cannot run id query on table ${this.query.getTableName()} because it has multiple ID fields`;
+        }
+        idQuery.addField("DISTINCT \"" + this.query.getTableName() + "\"." + idFields[0].fieldName, "_id");
+        idQuery.setJoins(this.query.getJoins());
+        idQuery.setOrderBys(this.query.getOrderBys());
+        idQuery.setWheres(this.query.getWheres());
+        idQuery.setLimit(maxResults);
+        if (startIndex) {
+            idQuery.setStartIndex(startIndex);
+        }
+        return db.query(idQuery.toSqlExpression().sql, [])
+        .then(rows => {
+            let ids = rows.map(row => row["_id"]);
+            if (ids.length == 0) {
+                return [];
+            }
+            this.query.addWhere(new SqlExpression("\"" + this.query.getTableName() + "\"." + idFields[0].fieldName + " IN (?)", ids));
+            return this.execute(db);
+        })
+    }
     
     querySingleRow<R>(db: DatabaseConnection): Promise<R> {
         return this.execute(db).then(entities => entities[0] as R);
