@@ -173,8 +173,9 @@ export class QueryBuilder {
         if (f.props.joinCondition != null) {
             joinCondition = QueryBuilder.resolveAliases(new SqlExpression(f.props.joinCondition), alias);
         } else {
-            let idField = this.determineIdField(type);
-            joinCondition = new SqlExpression("{" + alias + "}." + this.linkFieldName(f.fieldName) + " = {" + linkAlias + "}." + idField.fieldName);
+            let idField = f.props.foreignLinkField || this.determineIdField(type).fieldName;
+            let linkField = f.props.fieldName || f.props.linkField || this.linkFieldName(f.fieldName);
+            joinCondition = new SqlExpression("{" + alias + "}." + linkField + " = {" + linkAlias + "}." + idField);
         }
         this.query.addJoin(JoinType.LEFT, tableName, linkAlias, joinCondition);
         return linkAlias;
