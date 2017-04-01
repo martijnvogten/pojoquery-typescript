@@ -76,8 +76,8 @@ export class QueryBuilder {
     private query: SqlQuery;
     private resultClass: Function;
     private rootAlias: string;
-    private aliases = new Map<string,Alias>();
-    private fieldMappings = new Map<string,SimpleFieldMapping>();
+    private aliases: {[name: string]: Alias} = {};
+    private fieldMappings: {[field: string]:SimpleFieldMapping} = {};
     
     constructor(clz: Function) {
         let tableMappings = this.determineTableMapping(clz);
@@ -345,43 +345,42 @@ export class QueryBuilder {
     
     processRows<R>(rows: Object[]): R[] {
         let result: R[] = [];
-        let allEntities: {id: IdValue, entity: Object}[] = [];
-        
+        let allEntities: {[id: string]: Object} = {};
+        if (rows.length == 0) {
+            return result;
+        }
+        const fieldNamesByAlias = this.collectFieldsByAlias(Object.keys(rows[0]));
         for(let row of rows) {
-            let onThisRow = this.collectValuesByAlias(row);
             for(let aliasName in this.aliases) {
                 let a = this.aliases[aliasName];
                 
-                let values = onThisRow[a.alias];
-                if (this.allNulls(values)) {
+                // let values = onThisRow[a.alias];
+                if (this.allNulls(row, fieldNamesByAlias[a.alias].allFields)) {
                     continue;
                 }
                 
-                let id = this.createId(a.alias, values, a.idFields);
+                let id = this.createId(row, a.alias, fieldNamesByAlias[a.alias].idFields);
                 
                 if (a.parentAlias == null) {
                     // Primary 
                     
-                    if (allEntities.filter(entry => entry.id.equals(id)).length == 0) {
-                        let entity = this.buildEntityFromValues(a.factoryFunc, values, aliasName) as R;
-                        allEntities.push({id, entity});
+                    if (!allEntities[id]) {
+                        let entity = this.buildEntityFromValues(a.factoryFunc, row, fieldNamesByAlias[a.alias].allFields, aliasName) as R;
+                        allEntities[id] = entity;
                         result.push(entity);
                     }
                 } else {
                     
                     // Find the parent
-                    let parentValues = onThisRow[a.parentAlias];
-                    let parentId = this.createId(a.parentAlias, parentValues, this.aliases[a.parentAlias].idFields);
-                    let parent = allEntities.filter(entry => entry.id.equals(parentId))[0].entity;
+                    // let parentValues = onThisRow[a.parentAlias];
+                    let parentId = this.createId(row, a.parentAlias, fieldNamesByAlias[a.parentAlias].idFields);
+                    let parent = allEntities[parentId];
                     
                     // Linked entity
-                    let entityEntry = allEntities.filter(entry => entry.id.equals(id))[0];
-                    let entity;
-                    if (!entityEntry) {
-                        entity = this.buildEntityFromValues(a.factoryFunc, values, aliasName);
-                        allEntities.push({id, entity});
-                    } else {
-                        entity = entityEntry.entity;
+                    let entity = allEntities[id];
+                    if (!entity) {
+                        entity = this.buildEntityFromValues(a.factoryFunc, row, fieldNamesByAlias[a.alias].allFields, aliasName);
+                        allEntities[id] = entity;
                     }
                     
                     let targetFieldName = a.linkField.fieldName;
@@ -401,51 +400,59 @@ export class QueryBuilder {
         return result;
     }
     
-    buildEntityFromValues<R>(factoryFunc: any, values: Object, aliasName: string): R {
+    buildEntityFromValues<R>(factoryFunc: any, row: Object, fieldNames: string[], aliasName: string): R {
         let result = new factoryFunc();
 
-        Object.keys(values).forEach(key => {
+        for(let key of fieldNames) {
             let prop = key.substring(aliasName.length + 1);
-            result[prop] = values[key];
-        })
+            result[prop] = row[key];
+        }
         return result as R;
     }
     
-    collectValuesByAlias(row: Object): Object {
+    collectFieldsByAlias(allFields: string[]): {[alias: string]: {allFields: string[], idFields: string[]}} {
         let result = {};
-        for(let alias in this.aliases) {
-            let values = this.getAliasValues(row, alias);
+        for(let alias of Object.keys(this.aliases)) {
+            let values = this.getAliasFields(alias, allFields);
             result[alias] = values;
         }
         return result;
     }
     
-    getAliasValues(row: Object, alias: string) {
-        let result = {};
-        Object.keys(row).forEach(key => {
+    getAliasFields(alias: string, allFields: string[]): {allFields: string[], idFields: string[]} {
+        let all = [];
+        let idFields = [];
+        let aliasObject = this.aliases[alias];
+        let idFieldNames = aliasObject.idFields.map(f => f.fieldName);
+        for(let key of allFields) {
             let dotPos = key.lastIndexOf(".");
             if (alias == key.substring(0, dotPos)) {
-                result[key] = row[key];
+                all.push(key);
+                let fieldName = key.substring(dotPos + 1);
+                if (idFieldNames.indexOf(fieldName) > -1) {
+                    idFields.push(key);
+                }
             }
-        });
-        return result;
+        }
+        return {allFields: all, idFields: idFields};
     }
     
-    allNulls(values: Object) {
-        for(var key in values) {
-            if (values[key] !== null) {
+    allNulls(row: Object, fields: string[]) {
+        for(let f of fields) {
+            if (row[f] !== null) {
                 return false;
             }
         }
         return true;
     }
     
-    private createId(alias: string, values: Object, idFields: FieldMeta[]): IdValue {
-        let params = [];
-        idFields.forEach(f => {
-            params.push(values[alias + "." + f.fieldName]);
-        });
-        return new IdValue([alias].concat(params));
+    private createId(row: Object, alias: string, idFields: string[]): string {
+        let result = [alias];
+        for(let f of idFields) {
+            let val = row[f];
+            result.push(val ? val.toString().replace(/\|/g, "||") : "");
+        }
+        return result.join("|");
     }
 }
 
