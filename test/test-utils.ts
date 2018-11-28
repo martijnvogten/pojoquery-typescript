@@ -7,7 +7,7 @@ export function equal(actual: any, expected: any, description?: string) {
     }
 }
 
-export async function runTests(tests: Object) {
+export async function runTests(tests: Object): Promise<any> {
     for(let testName in tests) {
         try {
             let result = await tests[testName]();

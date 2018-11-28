@@ -2,7 +2,6 @@ import * as test from "./test-utils";
 
 import {table, id, text, joinOne, joinMany} from "../metadata"
 import {QueryBuilder} from "../pojoquery"
-import {SqlExpression} from "../query"
 
 @table("user")
 class User {
@@ -31,19 +30,19 @@ class Comment {
     comment: string;
 }
 
-class CommentDetail extends Comment {
-    @joinOne(User)
-    author: User;
-}
-
 class ArticleDetail extends Article {
-    @joinMany(Comment)
+    @joinMany(() => Comment)
     comments: Comment[];
 }
 
 class ArticleDetailWithCommentAuthors extends Article {
-    @joinMany(CommentDetail)
+    @joinMany(() => CommentDetail)
     comments: CommentDetail[];
+}
+
+class CommentDetail extends Comment {
+    @joinOne(User)
+    author: User;
 }
 
 export function simpleQuery() {
@@ -61,12 +60,12 @@ export function simpleWhereClause() {
 }
 export function simpleWhereClauseCheckParamValue() {
     let db = {
-        query(sql, params) {
+        query<T>(sql, params): Promise<T[]> {
             test.equal(params[0], 1);
-            return Promise.resolve({});
+            return Promise.resolve([] as T[]);
         }
     };
-    build(User).addWhere("id = ?", 1).querySingleRow(db);
+    return build(User).addWhere("id = ?", 1).querySingleRow(db);
 }
     
 export function simpleArticleQuery() {

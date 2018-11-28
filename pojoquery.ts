@@ -7,18 +7,18 @@ import * as meta from "./metadata"
 import {table, id, joinMany, joinOne, text, FieldMeta, embedded} from "./metadata"
 
 export interface DatabaseConnection {
-    query(sql: string, params: any[]): Promise<Object[]>;
+    query<T>(sql: string, params: any[]): Promise<T[]>;
 }
 
 class IdValue {
     values: any[];
     len: number;
-    
+
     constructor(values: any[]) {
         this.values = values;
         this.len = this.values.length;
     }
-    
+
     equals(other: IdValue) {
         if (this.len != other.len) {
             return false;
@@ -37,20 +37,20 @@ export class TableMapping {
     public tableName: string;
     public clz: Function;
     public fields: FieldMeta[];
-    
+
     constructor(tableName: string, clz: Function, fields: FieldMeta[]) {
         this.tableName = tableName;
         this.clz = clz;
         this.fields = fields;
-    }   
+    }
 }
 
 class SimpleFieldMapping {
     public field: FieldMeta;
-    
+
     constructor(field: FieldMeta) {
         this.field = field;
-    }   
+    }
 }
 
 class Alias {
@@ -78,9 +78,9 @@ export class QueryBuilder {
     private rootAlias: string;
     private aliases: {[name: string]: Alias} = {};
     private fieldMappings: {[field: string]:SimpleFieldMapping} = {};
-    
+
     constructor(clz: Function) {
-        let tableMappings = this.determineTableMapping(clz);
+        let tableMappings = QueryBuilder.determineTableMapping(clz);
         if (tableMappings.length == 0) {
             throw `Missing @table decorator on class ${clz.name} and all of its superclasses`;
         }
@@ -88,64 +88,67 @@ export class QueryBuilder {
         this.rootAlias = topMapping.tableName;
         this.resultClass = clz;
         this.query = new SqlQuery(this.rootAlias);
-        
+
         this.addClass(this.resultClass, this.rootAlias, null, null);
     }
-    
-    addClass(clz: Function, alias: string, parentAlias: string, linkField: FieldMeta): void {
-        this.aliases[alias] = new Alias(alias, clz, parentAlias, linkField, this.determineIdFields(clz));
-        this.addFields(alias, alias, clz, null);
+
+    getQuery() { 
+        return this.query;
     }
 
+    addClass(clz: Function, alias: string, parentAlias: string, linkField: FieldMeta): void {
+        this.aliases[alias] = new Alias(alias, clz, parentAlias, linkField, QueryBuilder.determineIdFields(clz));
+        this.addFields(alias, alias, clz, null);
+    }
+    
     addFields(alias: string, fieldsAlias: string, clz: Function, superClass: Function) {
-        let fields = this.collectFieldsOfClass(clz, superClass);
-        
-        this.collectFieldsOfClass(clz, superClass).forEach(f => {
+        QueryBuilder.collectFieldsOfClass(clz, superClass).forEach(f => {
             if (f.type == joinMany) {
                 const props = f.props;
                 if (props && props.linkTable) {
                     let linkTable = props.linkTable;
-                    let ownMapping = this.determineTableMapping(f.declaringClass);
-                    let linkField = props.linkField || this.linkFieldName(ownMapping[0].tableName);
+                    let ownMapping = QueryBuilder.determineTableMapping(f.declaringClass);
+                    let linkField = props.linkField || QueryBuilder.linkFieldName(ownMapping[0].tableName);
                     let linkTableAlias = alias == this.rootAlias ? linkTable : alias + "." + linkTable;
-                    let idField = this.determineIdField(f.declaringClass);
-                    
-                    let joinCondition  = new SqlExpression("{" + alias + "}." + idField.fieldName + " = {" + linkTableAlias + "}." + linkField)                 
+                    let idField = QueryBuilder.determineIdField(f.declaringClass);
+
+                    let joinCondition  = new SqlExpression("{" + alias + "}." + idField.fieldName + " = {" + linkTableAlias + "}." + linkField)
                     this.query.addJoin(JoinType.LEFT, linkTable, linkTableAlias, joinCondition)
-                     
-                    let componentType = f.props.linkedClass;
+
+                    let componentType = getComponentTypeOfLinkedClass(f.props.linkedClass);
                     
-                    let foreignMapping = this.determineTableMapping(componentType);
-                    let foreignIdField = this.determineIdField(componentType);
+                    let foreignMapping = QueryBuilder.determineTableMapping(componentType);
+                    let foreignIdField = QueryBuilder.determineIdField(componentType);
                     let foreignTable = foreignMapping[0].tableName;
-                    let linkTableField = props.foreignLinkField || this.linkFieldName(foreignTable);
+                    let linkTableField = props.foreignLinkField || QueryBuilder.linkFieldName(foreignTable);
                     let linkAlias = alias == this.rootAlias ? f.fieldName : alias + "." + f.fieldName;
                     
-                    joinCondition  = new SqlExpression("{" + linkTableAlias + "}." + linkTableField + " = {" + linkAlias + "}." + foreignIdField.fieldName)                 
+                    joinCondition  = new SqlExpression("{" + linkTableAlias + "}." + linkTableField + " = {" + linkAlias + "}." + foreignIdField.fieldName)
                     this.query.addJoin(JoinType.LEFT, foreignTable, linkAlias, joinCondition)
                     
                     this.aliases[linkAlias] = new Alias(linkAlias, componentType, alias, f, [foreignIdField]);
                     this.addClass(componentType, linkAlias, alias, f);
                 } else {
-                    let componentType = f.props.linkedClass;
+                    let componentType = getComponentTypeOfLinkedClass(f.props.linkedClass);
                     let linkAlias = this.joinMany(alias, f, componentType);
                     this.addClass(componentType, linkAlias, alias, f);
                 }
             } else if (f.type == joinOne) {
-                let componentType = f.props.linkedClass;
+                let componentType = getComponentTypeOfLinkedClass(f.props.linkedClass);
                 let linkAlias = this.joinOne(alias, f, componentType);
                 this.addClass(componentType, linkAlias, alias, f);
             } else if (f.type == embedded) {
+                let componentType = getComponentTypeOfLinkedClass(f.props.linkedClass);
                 let prefix = (f.props && f.props.prefix) || "";
 
-                let foreignalias = alias == this.rootAlias ? f.fieldName : alias + "." + f.fieldName 
-                this.collectFieldsOfClass(f.props.linkedClass, null).forEach(embeddedField => {
+                let foreignalias = alias == this.rootAlias ? f.fieldName : alias + "." + f.fieldName
+                QueryBuilder.collectFieldsOfClass(componentType, null).forEach(embeddedField => {
                     this.query.addField(
                         '{' + alias + '}.' + prefix + embeddedField.fieldName,
                         foreignalias + "." + embeddedField.fieldName
                     );
                 });
-                this.aliases[foreignalias] = new Alias(foreignalias, f.props.linkedClass, alias, f, this.determineIdFields(f.props.linkedClass));
+                this.aliases[foreignalias] = new Alias(foreignalias, componentType, alias, f, QueryBuilder.determineIdFields(componentType));
             } else {
                 let selectExpression: string;
 
@@ -159,39 +162,39 @@ export class QueryBuilder {
             }
         });
     }
-    
+
     addField(expression: string, fieldAlias: string, f: FieldMeta) {
         this.fieldMappings[fieldAlias] = new SimpleFieldMapping(f);
         this.query.addField(expression, fieldAlias);
     }
 
     private joinOne(alias: string, f: FieldMeta, type: Function): string {
-        let tableName = this.determineTableName(type);
+        let tableName = QueryBuilder.determineTableName(type);
         let linkAlias = alias == this.rootAlias ? f.fieldName : (alias + "." + f.fieldName);
-        
+
         let joinCondition: SqlExpression = null;
         if (f.props.joinCondition != null) {
             joinCondition = QueryBuilder.resolveAliases(new SqlExpression(f.props.joinCondition), alias);
         } else {
-            let idField = f.props.foreignLinkField || this.determineIdField(type).fieldName;
-            let linkField = f.props.fieldName || f.props.linkField || this.linkFieldName(f.fieldName);
+            let idField = f.props.foreignLinkField || QueryBuilder.determineIdField(type).fieldName;
+            let linkField = f.props.fieldName || f.props.linkField || QueryBuilder.linkFieldName(f.fieldName);
             joinCondition = new SqlExpression("{" + alias + "}." + linkField + " = {" + linkAlias + "}." + idField);
         }
         this.query.addJoin(JoinType.LEFT, tableName, linkAlias, joinCondition);
         return linkAlias;
     }
-    
+
     private joinMany(alias: string, f: FieldMeta, componentType: Function): string {
-        let tableName = this.determineTableName(componentType);
-        let ownMapping = this.determineTableMapping(f.declaringClass);
-        let idField = this.determineIdField(f.declaringClass).fieldName;
-        let linkField = (f.props && f.props.linkField) || this.linkFieldName(ownMapping[0].tableName);
-        
+        let tableName = QueryBuilder.determineTableName(componentType);
+        let ownMapping = QueryBuilder.determineTableMapping(f.declaringClass);
+        let idField = QueryBuilder.determineIdField(f.declaringClass).fieldName;
+        let linkField = (f.props && f.props.linkField) || QueryBuilder.linkFieldName(ownMapping[0].tableName);
+
         let joinCondition: SqlExpression = null;
         if (f.props && f.props.joinCondition) {
             joinCondition = QueryBuilder.resolveAliases(new SqlExpression(f.props.joinCondition), alias);
         }
-        
+
         return this.joinMany2(alias, f.fieldName, tableName, idField, linkField, joinCondition);
     }
 
@@ -203,7 +206,7 @@ export class QueryBuilder {
         this.query.addJoin(JoinType.LEFT, tableName, linkAlias, joinCondition);
         return linkAlias;
     }
-    
+
     static resolveAliases(sql: SqlExpression, prefixAlias: string): SqlExpression {
         return new SqlExpression(sql.sql.replace(/\{[a-zA-Z0-9_\.]+\}\./g, match => {
             let alias = match.substring(1, match.length - 2);
@@ -219,28 +222,28 @@ export class QueryBuilder {
         }), sql.params);
     }
 
-    linkFieldName(tableName: string) {
+    public static linkFieldName(tableName: string) {
         return tableName + '_id';
     }
-    
-    determineIdField(clz: Function) {
-        return this.determineIdFields(clz)[0];
+
+    public static determineIdField(clz: Function): FieldMeta {
+        return QueryBuilder.determineIdFields(clz)[0];
     }
-    
-    determineIdFields(clz: Function) {
-        let fields = this.collectFieldsOfClass(clz, null);
+
+    public static determineIdFields(clz: Function): FieldMeta[] {
+        let fields = QueryBuilder.collectFieldsOfClass(clz, null);
         return fields.filter(f => f.isIdField);
     }
-    
-    determineTableName(clz: Function) {
-        return this.determineTableMapping(clz).pop().tableName;
+
+    public static determineTableName(clz: Function) {
+        return QueryBuilder.determineTableMapping(clz).pop().tableName;
     }
 
     addWhere(sql: string, ...params: any[]): QueryBuilder {
         this.query.addWhere(new SqlExpression(sql, params));
         return this;
     }
-    
+
     addOrderBy(fieldName: string, ascending: boolean): QueryBuilder {
         this.query.addOrderBy(fieldName, ascending);
         return this;
@@ -253,12 +256,12 @@ export class QueryBuilder {
         }
         return this;
     }
-    
+
     toSql() {
         let sqlExpr = this.query.toSqlExpression();
         return sqlExpr.sql;
     }
-    
+
     execute<R>(db: DatabaseConnection, params?: any[]): Promise<R[]> {
         let sqlExpr = this.query.toSqlExpression();
         return db.query(sqlExpr.sql, sqlExpr.params).then(rows => {
@@ -268,8 +271,8 @@ export class QueryBuilder {
 
     queryLimitedList<R>(db: DatabaseConnection, maxResults: number, startIndex?: number): Promise<R[]> {
         let idQuery = new SqlQuery(this.query.getTableName());
-        let idFields = this.determineIdFields(this.resultClass);
-        if (idFields.length > 1) {
+        let idFields = QueryBuilder.determineIdFields(this.resultClass);
+    if (idFields.length > 1) {
             throw `Cannot run id query on table ${this.query.getTableName()} because it has multiple ID fields`;
         }
         idQuery.addField("DISTINCT \"" + this.query.getTableName() + "\"." + idFields[0].fieldName, "_id");
@@ -287,19 +290,19 @@ export class QueryBuilder {
                 return [];
             }
             this.query.addWhere(new SqlExpression("\"" + this.query.getTableName() + "\"." + idFields[0].fieldName + " IN (?)", [ids]));
-            return this.execute(db);
+            return this.execute<R>(db);
         })
     }
-    
+
     querySingleRow<R>(db: DatabaseConnection): Promise<R> {
         return this.execute(db).then(entities => entities[0] as R);
     }
-    
-    determineTableMapping(clz: Function): TableMapping[] {
+
+    public static determineTableMapping(clz: Function): TableMapping[] {
         let mappedClz = clz;
         let tables: TableMapping[] = [];
         let fields: FieldMeta[] = [];
-        
+
         while (clz != null) {
             if (mappedClz == null) {
                 mappedClz = clz;
@@ -318,8 +321,8 @@ export class QueryBuilder {
         }
         return tables;
     }
-    
-    collectFieldsOfClass(clz: Function, stopAtSuperClass: Function): FieldMeta[] {
+
+    private static collectFieldsOfClass(clz: Function, stopAtSuperClass: Function): FieldMeta[] {
         let result: FieldMeta[] = [];
         while(clz != null && clz != stopAtSuperClass) {
             result = this.filterFields(clz).concat(result);
@@ -327,12 +330,12 @@ export class QueryBuilder {
         }
         return result;
     }
-    
-    filterFields(clz: Function): FieldMeta[] {
+
+    private static filterFields(clz: Function): FieldMeta[] {
         return meta.getFields(clz);
     }
-    
-    getSuperclass(clz: Function): Function {
+
+    public static getSuperclass(clz: Function): Function {
         if (!clz.prototype) {
             return null;
         }
@@ -342,7 +345,7 @@ export class QueryBuilder {
         }
         return proto.constructor;
     }
-    
+
     processRows<R>(rows: Object[]): R[] {
         let result: R[] = [];
         let allEntities: {[id: string]: Object} = {};
@@ -353,36 +356,36 @@ export class QueryBuilder {
         for(let row of rows) {
             for(let aliasName in this.aliases) {
                 let a = this.aliases[aliasName];
-                
+
                 // let values = onThisRow[a.alias];
                 if (this.allNulls(row, fieldNamesByAlias[a.alias].allFields)) {
                     continue;
                 }
-                
+
                 let id = this.createId(row, a.alias, fieldNamesByAlias[a.alias].idFields);
-                
+
                 if (a.parentAlias == null) {
-                    // Primary 
-                    
+                    // Primary
+
                     if (!allEntities[id]) {
                         let entity = this.buildEntityFromValues(a.factoryFunc, row, fieldNamesByAlias[a.alias].allFields, aliasName) as R;
                         allEntities[id] = entity;
                         result.push(entity);
                     }
                 } else {
-                    
+
                     // Find the parent
                     // let parentValues = onThisRow[a.parentAlias];
                     let parentId = this.createId(row, a.parentAlias, fieldNamesByAlias[a.parentAlias].idFields);
                     let parent = allEntities[parentId];
-                    
+
                     // Linked entity
                     let entity = allEntities[id];
                     if (!entity) {
                         entity = this.buildEntityFromValues(a.factoryFunc, row, fieldNamesByAlias[a.alias].allFields, aliasName);
                         allEntities[id] = entity;
                     }
-                    
+
                     let targetFieldName = a.linkField.fieldName;
                     if (a.linkField.type == joinMany) {
                         if (!parent[targetFieldName]) {
@@ -399,7 +402,7 @@ export class QueryBuilder {
         };
         return result;
     }
-    
+
     buildEntityFromValues<R>(factoryFunc: any, row: Object, fieldNames: string[], aliasName: string): R {
         let result = new factoryFunc();
 
@@ -409,7 +412,7 @@ export class QueryBuilder {
         }
         return result as R;
     }
-    
+
     collectFieldsByAlias(allFields: string[]): {[alias: string]: {allFields: string[], idFields: string[]}} {
         let result = {};
         for(let alias of Object.keys(this.aliases)) {
@@ -418,7 +421,7 @@ export class QueryBuilder {
         }
         return result;
     }
-    
+
     getAliasFields(alias: string, allFields: string[]): {allFields: string[], idFields: string[]} {
         let all = [];
         let idFields = [];
@@ -436,7 +439,7 @@ export class QueryBuilder {
         }
         return {allFields: all, idFields: idFields};
     }
-    
+
     allNulls(row: Object, fields: string[]) {
         for(let f of fields) {
             if (row[f] !== null) {
@@ -445,7 +448,7 @@ export class QueryBuilder {
         }
         return true;
     }
-    
+
     private createId(row: Object, alias: string, idFields: string[]): string {
         let result = [alias];
         for(let f of idFields) {
@@ -456,4 +459,12 @@ export class QueryBuilder {
     }
 }
 
-
+function getComponentTypeOfLinkedClass(linkedClass: Function | (() => Function)): Function {
+    if (linkedClass.name == '') {
+        // This is an anonymous function, so assume it is
+        // a function that provides the class.
+        // (We need this to break dependency cycles.)
+        return (linkedClass as () => Function)();
+    }
+    return linkedClass;
+}

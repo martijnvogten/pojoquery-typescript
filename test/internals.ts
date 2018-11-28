@@ -27,11 +27,11 @@ class ArticleDetail extends Article {
 }
 
 export function getSuperclass() {
-    test.equal(new QueryBuilder(User).getSuperclass(ArticleDetail), Article, "getSuperclass");
+    test.equal(QueryBuilder.getSuperclass(ArticleDetail), Article, "getSuperclass");
 }
     
 export function tableMapping() {
-    let mapping = new QueryBuilder(User).determineTableMapping(ArticleDetail)
+    let mapping = QueryBuilder.determineTableMapping(ArticleDetail)
     test.equal(mapping.length, 1, "One table");
     test.equal(mapping[0].fields.length, 3, "Three fields");
 }
