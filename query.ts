@@ -139,7 +139,7 @@ export class SqlQuery {
             if (field.alias == null) {
                 return field.expression;
             } else {
-                let resolved = QueryBuilder.resolveAliases(field.expression, "");
+                let resolved = QueryBuilder.resolveAliases(field.expression, "", "", "");
                 let sql = resolved.sql + ' AS "' + field.alias + '"';
                 return new SqlExpression(sql, resolved.params);
             }
@@ -147,7 +147,7 @@ export class SqlQuery {
         
         let joinExpressions = this.joins.map(j => {
             let sql = j.joinType.getSql() + ' JOIN "' + j.table + '" AS "' + j.alias + '"';
-            let resolved = QueryBuilder.resolveAliases(j.joinCondition, "");
+            let resolved = QueryBuilder.resolveAliases(j.joinCondition, "", "", "");
             if (j.joinCondition != null) {
                 sql += " ON " + resolved.sql;
             }

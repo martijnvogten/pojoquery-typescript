@@ -5,6 +5,7 @@ import * as assert from "assert";
 import {SqlQuery,SqlExpression,JoinType} from "./query"
 import * as meta from "./metadata"
 import {table, id, joinMany, joinOne, text, FieldMeta, embedded} from "./metadata"
+import { resolveAliases } from "./test/internals";
 
 export interface DatabaseConnection {
     query<T>(sql: string, params: any[]): Promise<T[]>;
@@ -109,11 +110,16 @@ export class QueryBuilder {
                     let linkTable = props.linkTable;
                     let ownMapping = QueryBuilder.determineTableMapping(f.declaringClass);
                     let linkField = props.linkField || QueryBuilder.linkFieldName(ownMapping[0].tableName);
-                    let linkTableAlias = alias == this.rootAlias ? linkTable : alias + "." + linkTable;
+                    let linkTableAlias = alias + "_" + f.fieldName;
+                    let linkAlias = alias == this.rootAlias ? linkTableAlias : alias + "." + linkTableAlias;
                     let idField = QueryBuilder.determineIdField(f.declaringClass);
 
-                    let joinCondition  = new SqlExpression("{" + alias + "}." + idField.fieldName + " = {" + linkTableAlias + "}." + linkField)
-                    this.query.addJoin(JoinType.LEFT, linkTable, linkTableAlias, joinCondition)
+                    
+                    let joinCondition = props.joinCondition ?
+                        QueryBuilder.resolveAliases(new SqlExpression(props.joinCondition), alias, alias == this.rootAlias ? "" : alias, linkAlias)
+                        :
+                        new SqlExpression("{" + alias + "}." + idField.fieldName + " = {" + linkAlias + "}." + linkField);
+                    this.query.addJoin(JoinType.LEFT, linkTable, linkAlias, joinCondition)
 
                     let componentType = getComponentTypeOfLinkedClass(f.props.linkedClass);
                     
@@ -121,13 +127,13 @@ export class QueryBuilder {
                     let foreignIdField = QueryBuilder.determineIdField(componentType);
                     let foreignTable = foreignMapping[0].tableName;
                     let linkTableField = props.foreignLinkField || QueryBuilder.linkFieldName(foreignTable);
-                    let linkAlias = alias == this.rootAlias ? f.fieldName : alias + "." + f.fieldName;
+                    let foreignLinkAlias = alias == this.rootAlias ? f.fieldName : alias + "." + f.fieldName;
                     
-                    joinCondition  = new SqlExpression("{" + linkTableAlias + "}." + linkTableField + " = {" + linkAlias + "}." + foreignIdField.fieldName)
-                    this.query.addJoin(JoinType.LEFT, foreignTable, linkAlias, joinCondition)
+                    joinCondition  = new SqlExpression("{" + linkAlias + "}." + linkTableField + " = {" + foreignLinkAlias + "}." + foreignIdField.fieldName)
+                    this.query.addJoin(JoinType.LEFT, foreignTable, foreignLinkAlias, joinCondition)
                     
-                    this.aliases[linkAlias] = new Alias(linkAlias, componentType, alias, f, [foreignIdField]);
-                    this.addClass(componentType, linkAlias, alias, f);
+                    this.aliases[foreignLinkAlias] = new Alias(foreignLinkAlias, componentType, alias, f, [foreignIdField]);
+                    this.addClass(componentType, foreignLinkAlias, alias, f);
                 } else {
                     let componentType = getComponentTypeOfLinkedClass(f.props.linkedClass);
                     let linkAlias = this.joinMany(alias, f, componentType);
@@ -153,7 +159,7 @@ export class QueryBuilder {
                 let selectExpression: string;
 
                 if (f.props && f.props.expression) {
-                    selectExpression = QueryBuilder.resolveAliases(new SqlExpression(f.props.expression), alias).sql;
+                    selectExpression = QueryBuilder.resolveAliases(new SqlExpression(f.props.expression), alias, alias).sql;
                 } else {
                     let fieldName = (f.props && f.props.fieldName) || f.fieldName;
                     selectExpression = "{" + alias + "}." + fieldName;
@@ -174,7 +180,7 @@ export class QueryBuilder {
 
         let joinCondition: SqlExpression = null;
         if (f.props.joinCondition != null) {
-            joinCondition = QueryBuilder.resolveAliases(new SqlExpression(f.props.joinCondition), alias);
+            joinCondition = QueryBuilder.resolveAliases(new SqlExpression(f.props.joinCondition), alias, alias == this.rootAlias ? "" : alias, alias == this.rootAlias ? "" : alias);
         } else {
             let idField = f.props.foreignLinkField || QueryBuilder.determineIdField(type).fieldName;
             let linkField = f.props.fieldName || f.props.linkField || QueryBuilder.linkFieldName(f.fieldName);
@@ -188,11 +194,11 @@ export class QueryBuilder {
         let tableName = QueryBuilder.determineTableName(componentType);
         let ownMapping = QueryBuilder.determineTableMapping(f.declaringClass);
         let idField = QueryBuilder.determineIdField(f.declaringClass).fieldName;
-        let linkField = (f.props && f.props.linkField) || QueryBuilder.linkFieldName(ownMapping[0].tableName);
+        let linkField = (f.props && f.props.foreignLinkField) || QueryBuilder.linkFieldName(ownMapping[0].tableName);
 
         let joinCondition: SqlExpression = null;
         if (f.props && f.props.joinCondition) {
-            joinCondition = QueryBuilder.resolveAliases(new SqlExpression(f.props.joinCondition), alias);
+            joinCondition = QueryBuilder.resolveAliases(new SqlExpression(f.props.joinCondition), alias, alias);
         }
 
         return this.joinMany2(alias, f.fieldName, tableName, idField, linkField, joinCondition);
@@ -207,12 +213,14 @@ export class QueryBuilder {
         return linkAlias;
     }
 
-    static resolveAliases(sql: SqlExpression, prefixAlias: string): SqlExpression {
+    static resolveAliases(sql: SqlExpression, thisAlias: string, prefixAlias: string, linkTableAlias?: string): SqlExpression {
         return new SqlExpression(sql.sql.replace(/\{[a-zA-Z0-9_\.]+\}\./g, match => {
             let alias = match.substring(1, match.length - 2);
             let combinedAlias = "";
             if (alias == "this") {
-                combinedAlias = prefixAlias;
+                combinedAlias = thisAlias;
+            } else if (alias == "linktable") {
+                combinedAlias = linkTableAlias;
             } else if (prefixAlias) {
                 combinedAlias = prefixAlias + "." + alias;
             } else {
@@ -272,7 +280,7 @@ export class QueryBuilder {
     queryLimitedList<R>(db: DatabaseConnection, maxResults: number, startIndex?: number): Promise<R[]> {
         let idQuery = new SqlQuery(this.query.getTableName());
         let idFields = QueryBuilder.determineIdFields(this.resultClass);
-    if (idFields.length > 1) {
+        if (idFields.length > 1) {
             throw `Cannot run id query on table ${this.query.getTableName()} because it has multiple ID fields`;
         }
         idQuery.addField("DISTINCT \"" + this.query.getTableName() + "\"." + idFields[0].fieldName, "_id");

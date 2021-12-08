@@ -70,8 +70,8 @@ export function testMany2ManyOneLevelDeeper() {
             "courses.students".name AS "courses.students.name" 
         FROM "curriculum" 
             LEFT JOIN "course" AS "courses" ON "curriculum".id = "courses".curriculum_id 
-            LEFT JOIN "course_students" AS "courses.course_students" ON "courses".id = "courses.course_students".course_id 
-            LEFT JOIN "student" AS "courses.students" ON "courses.course_students".stud_id = "courses.students".stud_id
+            LEFT JOIN "course_students" AS "courses.courses_students" ON "courses".id = "courses.courses_students".course_id 
+            LEFT JOIN "student" AS "courses.students" ON "courses.courses_students".stud_id = "courses.students".stud_id
         `
     );
 }
