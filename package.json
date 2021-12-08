@@ -17,7 +17,7 @@
     "diff": "4.0.1"
   },
   "scripts": {
-    "test": "js/test/runall.js"
+    "test": "node js/test/runall.js"
   },
   "repository": {
     "type": "git",
