@@ -12,7 +12,7 @@
   "devDependencies": {
     "source-map-support": "0.5.16",
     "typescript": "3.7.2",
-    "mysql": "2.17.1",
+    "mysql": "2.18.0",
     "colors": "1.4.0",
     "diff": "4.0.1"
   },
